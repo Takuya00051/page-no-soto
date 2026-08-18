@@ -256,31 +256,12 @@ function markerIcon(colors) {
   });
 }
 
-// ---- スポット写真（Wikimedia Commons の座標検索） ----
-// spot に photo（画像URL）があればそれを優先。なければ座標周辺の
-// Commons 画像を自動検索する。結果はメモリにキャッシュ。
-const photoCache = new Map();
-
+// ---- スポット写真 ----
+// 座標検索による自動取得（Wikimedia Commons）は的外れな写真を拾うことが多かったため廃止。
+// spot.photo を手入力した場所だけ、その画像を表示する。
 async function fetchSpotPhoto(spotId, spot) {
   if (spot.photo) return { url: spot.photo, pageUrl: spot.photoCredit || null };
-  if (photoCache.has(spotId)) return photoCache.get(spotId);
-  let result = null;
-  try {
-    const api =
-      "https://commons.wikimedia.org/w/api.php" +
-      `?action=query&generator=geosearch&ggscoord=${spot.lat}%7C${spot.lng}` +
-      "&ggsradius=300&ggslimit=8&ggsnamespace=6" +
-      "&prop=imageinfo&iiprop=url&iiurlwidth=480&format=json&origin=*";
-    const r = await fetch(api);
-    const j = await r.json();
-    const pages = Object.values((j.query && j.query.pages) || {});
-    const info = pages
-      .map((p) => p.imageinfo && p.imageinfo[0])
-      .find((i) => i && /\.(jpe?g|png)(\?|$)/i.test(i.thumburl || ""));
-    if (info) result = { url: info.thumburl, pageUrl: info.descriptionurl };
-  } catch (e) { /* オフライン等は写真なしで続行 */ }
-  photoCache.set(spotId, result);
-  return result;
+  return null;
 }
 
 // 座標検索の自動取得は的外れな写真を拾うことがあるため、
@@ -303,26 +284,33 @@ function attachPhoto(marker, spotId, spot, contentEl) {
       img.alt = spot.name;
       img.addEventListener("load", () => e.popup.update());
       holder.appendChild(img);
+
+      const searchLink = document.createElement("a");
+      searchLink.className = "popup-photo-search";
+      searchLink.href = googleImageSearchUrl(spot);
+      searchLink.target = "_blank";
+      searchLink.rel = "noopener";
+      searchLink.textContent = "🔍 違う写真を探す";
+      holder.appendChild(searchLink);
+
+      if (photo.pageUrl) {
+        const credit = document.createElement("a");
+        credit.className = "popup-photo-credit";
+        credit.href = photo.pageUrl;
+        credit.target = "_blank";
+        credit.rel = "noopener";
+        credit.textContent = "© Wikimedia Commons";
+        holder.appendChild(credit);
+      }
     } else {
-      holder.classList.add("popup-photo-empty");
-    }
-
-    const searchLink = document.createElement("a");
-    searchLink.className = "popup-photo-search";
-    searchLink.href = googleImageSearchUrl(spot);
-    searchLink.target = "_blank";
-    searchLink.rel = "noopener";
-    searchLink.textContent = photo ? "🔍 違う写真を探す" : "🔍 写真を検索";
-    holder.appendChild(searchLink);
-
-    if (photo && photo.pageUrl) {
-      const credit = document.createElement("a");
-      credit.className = "popup-photo-credit";
-      credit.href = photo.pageUrl;
-      credit.target = "_blank";
-      credit.rel = "noopener";
-      credit.textContent = "© Wikimedia Commons";
-      holder.appendChild(credit);
+      // 手入力の写真がない場所は、写真を表示せず検索タイルだけを見せる
+      const searchTile = document.createElement("a");
+      searchTile.className = "popup-photo-tile";
+      searchTile.href = googleImageSearchUrl(spot);
+      searchTile.target = "_blank";
+      searchTile.rel = "noopener";
+      searchTile.textContent = `🔍 「${spot.name}」の写真を検索`;
+      holder.appendChild(searchTile);
     }
     e.popup.update();
   });
