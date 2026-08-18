@@ -293,8 +293,16 @@ function popupHtml(spot, entries) {
   return el;
 }
 
+let didInitialFit = false;
+const markersBySpot = new Map();
+
 function render() {
+  // 開いているポップアップを覚えておき、再描画後に開き直す
+  let openSpotId = null;
+  markersBySpot.forEach((m, id) => { if (m.isPopupOpen()) openSpotId = id; });
+
   markerLayer.clearLayers();
+  markersBySpot.clear();
   const works = selectedWorks();
 
   // 選択状態を URL ハッシュへ反映（ブックマーク・共有用）
@@ -328,11 +336,19 @@ function render() {
     });
     attachPhoto(marker, spotId, spot, content);
     marker.addTo(markerLayer);
+    markersBySpot.set(spotId, marker);
     latLngs.push([spot.lat, spot.lng]);
   });
 
-  if (latLngs.length) {
+  // 地図の全体移動は初回表示のときだけ。以降はユーザーの視点を保つ
+  if (latLngs.length && !didInitialFit) {
     map.fitBounds(L.latLngBounds(latLngs).pad(0.2), { maxZoom: 15 });
+    didInitialFit = true;
+  }
+
+  // 開いていたポップアップを復元（同じ場所が残っていれば）
+  if (openSpotId && markersBySpot.has(openSpotId)) {
+    markersBySpot.get(openSpotId).openPopup();
   }
 }
 

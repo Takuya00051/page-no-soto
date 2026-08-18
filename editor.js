@@ -36,6 +36,13 @@ editorEl.innerHTML = `
         <label class="ed-label">経度 <input id="ed-spot-lng" type="number" step="any"></label>
       </div>
     </div>
+    <div id="ed-move-spot" hidden>
+      <div class="ed-row">
+        <button id="ed-move-toggle">📍 ピンの位置を打ち直す</button>
+        <button id="ed-move-save" class="ed-primary" hidden>この位置で保存</button>
+      </div>
+      <p class="ed-hint" id="ed-move-hint"></p>
+    </div>
 
     <label class="ed-label">この場所で何が起きたか
       <textarea id="ed-text" rows="5" placeholder="小説の中でこの場所で起きたことを書く"></textarea>
@@ -106,13 +113,34 @@ function currentScene() {
   return { work, scene };
 }
 
+let moveMode = false;
+let movePending = null;
+
+function resetMoveMode() {
+  moveMode = false;
+  movePending = null;
+  $("ed-move-save").hidden = true;
+  $("ed-move-toggle").textContent = "📍 ピンの位置を打ち直す";
+  updateMoveHint();
+}
+
+function updateMoveHint() {
+  const spot = SPOTS[$("ed-spot").value];
+  if (!spot) return;
+  $("ed-move-hint").textContent = moveMode
+    ? "地図をクリックすると新しい位置に仮ピンが立ちます。"
+    : `現在の座標: ${spot.lat}, ${spot.lng}`;
+}
+
 function onSelectionChange() {
   const newWork = $("ed-work").value === NEW;
   const newSpot = $("ed-spot").value === NEW;
   $("ed-new-work").hidden = !newWork;
   $("ed-new-spot").hidden = !newSpot;
+  $("ed-move-spot").hidden = newSpot;
 
-  if (!newSpot && pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
+  if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
+  resetMoveMode();
 
   const { scene } = newWork || newSpot ? {} : currentScene();
   $("ed-text").value = scene ? scene.text : "";
@@ -124,13 +152,43 @@ function onSelectionChange() {
 $("ed-work").addEventListener("change", onSelectionChange);
 $("ed-spot").addEventListener("change", onSelectionChange);
 
-// 新しい場所モード中の地図クリックで座標を拾う
+// 地図クリック: 新しい場所の座標入力、または既存ピンの位置打ち直し
 map.on("click", (e) => {
-  if (panel.hidden || $("ed-spot").value !== NEW) return;
-  $("ed-spot-lat").value = e.latlng.lat.toFixed(5);
-  $("ed-spot-lng").value = e.latlng.lng.toFixed(5);
-  if (pickMarker) map.removeLayer(pickMarker);
-  pickMarker = L.marker(e.latlng).addTo(map);
+  if (panel.hidden) return;
+  if ($("ed-spot").value === NEW) {
+    $("ed-spot-lat").value = e.latlng.lat.toFixed(5);
+    $("ed-spot-lng").value = e.latlng.lng.toFixed(5);
+    if (pickMarker) map.removeLayer(pickMarker);
+    pickMarker = L.marker(e.latlng).addTo(map);
+  } else if (moveMode) {
+    movePending = e.latlng;
+    if (pickMarker) map.removeLayer(pickMarker);
+    pickMarker = L.marker(e.latlng).addTo(map);
+    $("ed-move-save").hidden = false;
+  }
+});
+
+$("ed-move-toggle").addEventListener("click", () => {
+  moveMode = !moveMode;
+  $("ed-move-toggle").textContent = moveMode ? "打ち直しをやめる" : "📍 ピンの位置を打ち直す";
+  if (!moveMode) {
+    movePending = null;
+    $("ed-move-save").hidden = true;
+    if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
+  }
+  updateMoveHint();
+});
+
+$("ed-move-save").addEventListener("click", async () => {
+  const spotId = $("ed-spot").value;
+  const spot = SPOTS[spotId];
+  if (!spot || !movePending) return;
+  spot.lat = parseFloat(movePending.lat.toFixed(5));
+  spot.lng = parseFloat(movePending.lng.toFixed(5));
+  if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
+  resetMoveMode();
+  render();
+  await persistData(`「${spot.name}」の位置を更新しました。`);
 });
 
 // ---- 保存・削除 ----
@@ -199,7 +257,10 @@ async function applyAndPersist(doneMsg, workId, spotId) {
   $("ed-spot-name").value = $("ed-spot-note").value = "";
   $("ed-spot-lat").value = $("ed-spot-lng").value = "";
 
-  // 永続化
+  await persistData(doneMsg);
+}
+
+async function persistData(doneMsg) {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) {
     downloadData();
@@ -208,7 +269,7 @@ async function applyAndPersist(doneMsg, workId, spotId) {
   try {
     status("GitHub に保存中…");
     await commitData();
-    status(doneMsg + " GitHub にコミットしました（サイト反映まで数分）。");
+    status(doneMsg + " GitHub にコミットしました（リロードで反映されます）。");
   } catch (e) {
     downloadData();
     status(`GitHub への保存に失敗（${e.message}）。data.json をダウンロードしたので手動で差し替えてください。`, true);
