@@ -264,6 +264,13 @@ function popupHtml(spot, entries) {
   photoHolder.className = "popup-photo";
   el.appendChild(photoHolder);
 
+  if (spot.kana) {
+    const kana = document.createElement("p");
+    kana.className = "popup-spot-kana";
+    kana.textContent = spot.kana;
+    el.appendChild(kana);
+  }
+
   const name = document.createElement("p");
   name.className = "popup-spot-name";
   name.textContent = spot.name;

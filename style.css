@@ -211,6 +211,13 @@ html, body {
 
 .popup { width: 280px; max-width: calc(100vw - 90px); }
 
+.popup-spot-kana {
+  font-size: 10px;
+  color: var(--ink-soft);
+  letter-spacing: 0.06em;
+  margin: 0 0 1px;
+}
+
 .popup-spot-name {
   font-family: "Noto Serif JP", serif;
   font-size: 17px;

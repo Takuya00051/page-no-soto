@@ -31,6 +31,7 @@ editorEl.innerHTML = `
     <div id="ed-new-spot" hidden>
       <p class="ed-hint">地図をクリックすると座標が入ります。</p>
       <label class="ed-label">場所名 <input id="ed-spot-name" type="text" placeholder="例: 貴船神社"></label>
+      <label class="ed-label">フリガナ（省略可） <input id="ed-spot-kana" type="text" placeholder="例: きふねじんじゃ"></label>
       <label class="ed-label">場所の説明（省略可） <input id="ed-spot-note" type="text"></label>
       <div class="ed-row">
         <label class="ed-label">緯度 <input id="ed-spot-lat" type="number" step="any"></label>
@@ -227,6 +228,8 @@ $("ed-save").addEventListener("click", async () => {
     if (!isFinite(lat) || !isFinite(lng)) return status("地図をクリックして座標を入れてください。", true);
     spotId = newId("spot");
     SPOTS[spotId] = { name, lat, lng, note: $("ed-spot-note").value.trim() };
+    const kana = $("ed-spot-kana").value.trim();
+    if (kana) SPOTS[spotId].kana = kana;
   }
 
   const quote = $("ed-quote").value.trim();
@@ -259,7 +262,7 @@ async function applyAndPersist(doneMsg, workId, spotId) {
   if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
   refreshSelects(workId, spotId);
   $("ed-work-title").value = $("ed-work-author").value = "";
-  $("ed-spot-name").value = $("ed-spot-note").value = "";
+  $("ed-spot-name").value = $("ed-spot-kana").value = $("ed-spot-note").value = "";
   $("ed-spot-lat").value = $("ed-spot-lng").value = "";
 
   await persistData(doneMsg);
