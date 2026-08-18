@@ -1,7 +1,13 @@
 // ============================================================
 // 京都文学マップ 表示ロジック
-// （データの追加・編集は data.js だけで完結します）
+// （データは data.json。サイト上の編集機能は editor.js）
 // ============================================================
+
+const REPO = "Takuya00051/ClaudecodeTest2";
+const DATA_PATH = "kyoto-literary-map/data.json";
+
+let SPOTS = {};
+let WORKS = [];
 
 const map = L.map("map", { zoomControl: false }).setView([35.023, 135.776], 14);
 L.control.zoom({ position: "bottomright" }).addTo(map);
@@ -12,6 +18,23 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 const markerLayer = L.layerGroup().addTo(map);
+
+// 公開サイトでは GitHub の最新データを優先して取得する
+// （Pages の再ビルドを待たずに編集結果が反映される）。失敗時は同梱の data.json。
+async function loadData() {
+  const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
+  if (!isLocal) {
+    try {
+      const r = await fetch(
+        `https://raw.githubusercontent.com/${REPO}/main/${DATA_PATH}?t=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      if (r.ok) return await r.json();
+    } catch (e) { /* fall through */ }
+  }
+  const r = await fetch("data.json", { cache: "no-store" });
+  return await r.json();
+}
 
 // URL ハッシュ（#yoru-mijika,yojohan）で選択状態を共有できるようにする
 function selectedIdsFromHash() {
@@ -24,36 +47,38 @@ function selectedIdsFromHash() {
 
 // ---- サイドバーの作品リスト ----
 const workListEl = document.getElementById("work-list");
-const initialSelection = selectedIdsFromHash() ?? [WORKS[0]?.id].filter(Boolean);
 
-WORKS.forEach((work) => {
-  const li = document.createElement("li");
-  li.className = "work-item";
+function buildWorkList(selectedIds) {
+  workListEl.innerHTML = "";
+  WORKS.forEach((work) => {
+    const li = document.createElement("li");
+    li.className = "work-item";
 
-  const label = document.createElement("label");
+    const label = document.createElement("label");
 
-  const dot = document.createElement("span");
-  dot.className = "work-color";
-  dot.style.background = work.color;
+    const dot = document.createElement("span");
+    dot.className = "work-color";
+    dot.style.background = work.color;
 
-  const meta = document.createElement("span");
-  meta.className = "work-meta";
-  meta.innerHTML =
-    `<span class="work-title"></span><div class="work-author"></div>`;
-  meta.querySelector(".work-title").textContent = work.title;
-  meta.querySelector(".work-author").textContent =
-    `${work.author} ・ ${work.scenes.length}スポット`;
+    const meta = document.createElement("span");
+    meta.className = "work-meta";
+    meta.innerHTML =
+      `<span class="work-title"></span><div class="work-author"></div>`;
+    meta.querySelector(".work-title").textContent = work.title;
+    meta.querySelector(".work-author").textContent =
+      `${work.author} ・ ${work.scenes.length}スポット`;
 
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.value = work.id;
-  checkbox.checked = initialSelection.includes(work.id);
-  checkbox.addEventListener("change", render);
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = work.id;
+    checkbox.checked = selectedIds.includes(work.id);
+    checkbox.addEventListener("change", render);
 
-  label.append(dot, meta, checkbox);
-  li.appendChild(label);
-  workListEl.appendChild(li);
-});
+    label.append(dot, meta, checkbox);
+    li.appendChild(label);
+    workListEl.appendChild(li);
+  });
+}
 
 function selectedWorks() {
   const checked = new Set(
@@ -138,7 +163,7 @@ function render() {
     work.scenes.forEach((scene) => {
       const spot = SPOTS[scene.spot];
       if (!spot) {
-        console.warn(`data.js: 場所ID "${scene.spot}" が SPOTS にありません（${work.title}）`);
+        console.warn(`data.json: 場所ID "${scene.spot}" が spots にありません（${work.title}）`);
         return;
       }
       if (!bySpot.has(scene.spot)) bySpot.set(scene.spot, []);
@@ -168,4 +193,10 @@ document.getElementById("sidebar-toggle").addEventListener("click", () => {
 });
 map.on("click", () => sidebar.classList.remove("open"));
 
-render();
+// ---- 起動 ----
+const appReady = loadData().then((data) => {
+  SPOTS = data.spots;
+  WORKS = data.works;
+  buildWorkList(selectedIdsFromHash() ?? [WORKS[0]?.id].filter(Boolean));
+  render();
+});

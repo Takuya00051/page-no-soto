@@ -208,6 +208,101 @@ html, body {
   color: var(--ink);
 }
 
+/* ---------- 編集パネル ---------- */
+#editor {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  z-index: 1000;
+  font-family: "Noto Sans JP", sans-serif;
+}
+
+#editor-toggle {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+#editor-panel {
+  position: absolute;
+  bottom: 44px;
+  left: 0;
+  width: 320px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  padding: 16px;
+}
+
+#editor-panel h2 {
+  font-family: "Noto Serif JP", serif;
+  font-size: 15px;
+  margin: 0 0 10px;
+}
+
+.ed-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+
+.ed-label input[type="text"],
+.ed-label input[type="password"],
+.ed-label input[type="number"],
+.ed-label select,
+.ed-label textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.ed-label textarea { resize: vertical; line-height: 1.7; }
+
+.ed-color input { margin-top: 4px; width: 60px; height: 30px; padding: 2px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+
+.ed-row { display: flex; gap: 8px; align-items: flex-start; }
+.ed-row .ed-label { flex: 1; }
+
+.ed-hint { font-size: 11.5px; color: var(--ink-soft); line-height: 1.7; margin: 0 0 10px; }
+.ed-error { color: #b3261e; }
+
+#editor-panel button {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+#editor-panel button.ed-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+#editor-panel button.ed-danger { color: #b3261e; border-color: #e5c1bf; }
+
+.ed-settings { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.ed-settings summary { font-size: 12px; color: var(--ink-soft); cursor: pointer; margin-bottom: 8px; }
+
 /* ---------- モバイル ---------- */
 .sidebar-toggle { display: none; }
 
@@ -224,6 +319,15 @@ html, body {
   }
 
   .sidebar.open { transform: translateX(0); }
+
+  #editor-panel {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 60px;
+    width: auto;
+    max-height: 62vh;
+  }
 
   .sidebar-toggle {
     display: block;
