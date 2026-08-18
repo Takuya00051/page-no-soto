@@ -22,6 +22,18 @@
       <section class="works-section">
         <h2>作品を選ぶ</h2>
         <p class="hint">チェックした作品の登場スポットが地図に表示されます。複数選ぶと、共有されている場所のピンが作品色の扇形になります。</p>
+
+        <input id="work-search" class="work-search" type="search" placeholder="作品名・著者名で検索">
+        <div class="work-sort">
+          <span>並び替え:</span>
+          <select id="work-sort-key">
+            <option value="default">追加順</option>
+            <option value="author">著者名</option>
+            <option value="title">作品名</option>
+            <option value="year">刊行年</option>
+          </select>
+        </div>
+
         <ul class="work-list" id="work-list"></ul>
         <button id="fit-pins" class="fit-pins-btn">表示中のピンに画面を合わせる</button>
       </section>

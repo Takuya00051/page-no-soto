@@ -129,15 +129,54 @@ function selectedIdsFromHash() {
 
 // ---- サイドバーの作品リスト ----
 const workListEl = document.getElementById("work-list");
+const searchEl = document.getElementById("work-search");
+const sortEl = document.getElementById("work-sort-key");
 
 // GitHub トークンが設定されているブラウザ＝サイトのオーナーとみなし、
 // 下書き（draft: true）の作品はオーナーにだけ表示する
 const OWNER_TOKEN_KEY = "kyoto-map-github-token";
 const isOwner = () => !!localStorage.getItem(OWNER_TOKEN_KEY);
 
+// チェック状態はリスト再構築（検索・並べ替え）をまたいで保持する
+const selectedWorkIds = new Set();
+
+function visibleWorksSorted() {
+  const q = searchEl.value.trim().toLowerCase();
+  let list = WORKS.filter((w) => !w.draft || isOwner());
+  if (q) {
+    list = list.filter(
+      (w) => w.title.toLowerCase().includes(q) || w.author.toLowerCase().includes(q)
+    );
+  }
+  const key = sortEl.value;
+  if (key === "author") {
+    list = [...list].sort((a, b) => a.author.localeCompare(b.author, "ja"));
+  } else if (key === "title") {
+    list = [...list].sort((a, b) => a.title.localeCompare(b.title, "ja"));
+  } else if (key === "year") {
+    list = [...list].sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999));
+  }
+  return list;
+}
+
 function buildWorkList(selectedIds) {
+  if (selectedIds) {
+    selectedWorkIds.clear();
+    selectedIds.forEach((id) => selectedWorkIds.add(id));
+  }
+
   workListEl.innerHTML = "";
-  WORKS.filter((w) => !w.draft || isOwner()).forEach((work) => {
+  const list = visibleWorksSorted();
+
+  if (!list.length) {
+    const empty = document.createElement("li");
+    empty.className = "work-empty";
+    empty.textContent = "該当する作品がありません。";
+    workListEl.appendChild(empty);
+    return;
+  }
+
+  list.forEach((work) => {
     const li = document.createElement("li");
     li.className = "work-item";
 
@@ -158,14 +197,20 @@ function buildWorkList(selectedIds) {
       badge.textContent = "下書き";
       meta.querySelector(".work-title").appendChild(badge);
     }
-    meta.querySelector(".work-author").textContent =
-      `${work.author} ・ ${work.scenes.length}スポット`;
+    const authorLine = [work.author, work.year ? `${work.year}年` : null, `${work.scenes.length}スポット`]
+      .filter(Boolean)
+      .join(" ・ ");
+    meta.querySelector(".work-author").textContent = authorLine;
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.value = work.id;
-    checkbox.checked = selectedIds.includes(work.id);
-    checkbox.addEventListener("change", render);
+    checkbox.checked = selectedWorkIds.has(work.id);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedWorkIds.add(work.id);
+      else selectedWorkIds.delete(work.id);
+      render();
+    });
 
     label.append(dot, meta, checkbox);
     li.appendChild(label);
@@ -173,11 +218,11 @@ function buildWorkList(selectedIds) {
   });
 }
 
+searchEl.addEventListener("input", () => buildWorkList());
+sortEl.addEventListener("change", () => buildWorkList());
+
 function selectedWorks() {
-  const checked = new Set(
-    [...workListEl.querySelectorAll("input:checked")].map((el) => el.value)
-  );
-  return WORKS.filter((w) => checked.has(w.id));
+  return WORKS.filter((w) => selectedWorkIds.has(w.id));
 }
 
 // ---- マーカー描画 ----

@@ -21,7 +21,10 @@ editorEl.innerHTML = `
     <div id="ed-new-work" hidden>
       <label class="ed-label">タイトル <input id="ed-work-title" type="text" placeholder="例: 夜行"></label>
       <label class="ed-label">著者 <input id="ed-work-author" type="text" placeholder="例: 森見登美彦"></label>
-      <label class="ed-label ed-color">ピンの色 <input id="ed-work-color" type="color" value="#5a7d9a"></label>
+      <div class="ed-row">
+        <label class="ed-label">刊行年（省略可） <input id="ed-work-year" type="number" step="1" min="1800" max="2100" placeholder="例: 2006"></label>
+        <label class="ed-label ed-color">ピンの色 <input id="ed-work-color" type="color" value="#5a7d9a"></label>
+      </div>
     </div>
     <label class="ed-check"><input type="checkbox" id="ed-draft"> 下書き（読了まで一覧に公開しない）</label>
 
@@ -95,7 +98,10 @@ $("editor-close").addEventListener("click", () => {
 function refreshSelects(keepWork, keepSpot) {
   const workSel = $("ed-work");
   workSel.innerHTML = "";
-  WORKS.forEach((w) => workSel.add(new Option(`${w.title}（${w.author}）`, w.id)));
+  WORKS.forEach((w) => {
+    const yearPart = w.year ? `・${w.year}年` : "";
+    workSel.add(new Option(`${w.title}（${w.author}${yearPart}）`, w.id));
+  });
   workSel.add(new Option("＋ 新しい作品を追加", NEW));
   if (keepWork) workSel.value = keepWork;
 
@@ -217,7 +223,10 @@ $("ed-save").addEventListener("click", async () => {
     const author = $("ed-work-author").value.trim();
     if (!title) return status("作品タイトルを入力してください。", true);
     workId = newId("work");
-    WORKS.push({ id: workId, title, author, color: $("ed-work-color").value, scenes: [] });
+    const work = { id: workId, title, author, color: $("ed-work-color").value, scenes: [] };
+    const year = parseInt($("ed-work-year").value, 10);
+    if (Number.isFinite(year)) work.year = year;
+    WORKS.push(work);
   }
 
   if (spotId === NEW) {
@@ -261,7 +270,7 @@ async function applyAndPersist(doneMsg, workId, spotId) {
   render();
   if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
   refreshSelects(workId, spotId);
-  $("ed-work-title").value = $("ed-work-author").value = "";
+  $("ed-work-title").value = $("ed-work-author").value = $("ed-work-year").value = "";
   $("ed-spot-name").value = $("ed-spot-kana").value = $("ed-spot-note").value = "";
   $("ed-spot-lat").value = $("ed-spot-lng").value = "";
 
