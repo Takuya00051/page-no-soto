@@ -1,0 +1,265 @@
+:root {
+  --bg: #faf7f2;
+  --ink: #2b2620;
+  --ink-soft: #6b6257;
+  --line: #e4ddd2;
+  --accent: #8a2432;
+  --sidebar-w: 340px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: "Noto Sans JP", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.layout {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ---------- サイドバー ---------- */
+.sidebar {
+  width: var(--sidebar-w);
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.site-header {
+  padding: 28px 24px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.site-header h1 {
+  font-family: "Noto Serif JP", serif;
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.tagline {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+}
+
+.works-section {
+  padding: 18px 24px;
+  flex: 1;
+}
+
+.works-section h2 {
+  font-family: "Noto Serif JP", serif;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  letter-spacing: 0.08em;
+}
+
+.hint {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+
+.link-badge-sample {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  vertical-align: 1px;
+}
+
+.work-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.work-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: #fff;
+  overflow: hidden;
+  transition: box-shadow 0.15s ease;
+}
+
+.work-item:hover { box-shadow: 0 2px 8px rgba(43, 38, 32, 0.08); }
+
+.work-item label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.work-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.work-meta { min-width: 0; }
+
+.work-title {
+  font-family: "Noto Serif JP", serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.work-author {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.work-item input[type="checkbox"] {
+  margin-left: auto;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.work-item.active { border-color: rgba(138, 36, 50, 0.45); }
+
+.site-footer {
+  padding: 14px 24px 20px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.site-footer a { color: inherit; }
+
+/* ---------- 地図 ---------- */
+.map-container { flex: 1; position: relative; }
+
+#map { position: absolute; inset: 0; background: #e8e4dc; }
+
+/* マーカー */
+.spot-marker {
+  display: block;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+
+.spot-marker.linked { border-color: #fff; }
+
+/* ポップアップ */
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  font-family: "Noto Sans JP", sans-serif;
+}
+
+.leaflet-popup-content { margin: 16px 18px; width: auto !important; }
+
+.popup { max-width: 300px; }
+
+.popup-spot-name {
+  font-family: "Noto Serif JP", serif;
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: var(--ink);
+}
+
+.popup-spot-note {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+  line-height: 1.6;
+}
+
+.popup-link-note {
+  display: inline-block;
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.popup-work {
+  border-left: 3px solid;
+  padding: 2px 0 2px 10px;
+  margin-bottom: 12px;
+}
+
+.popup-work:last-child { margin-bottom: 0; }
+
+.popup-work-title {
+  font-family: "Noto Serif JP", serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.popup-work-text {
+  font-size: 12.5px;
+  line-height: 1.75;
+  margin: 0;
+  color: var(--ink);
+}
+
+/* ---------- モバイル ---------- */
+.sidebar-toggle { display: none; }
+
+@media (max-width: 720px) {
+  .layout { position: relative; }
+
+  .sidebar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: min(84vw, var(--sidebar-w));
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar.open { transform: translateX(0); }
+
+  .sidebar-toggle {
+    display: block;
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1100;
+    padding: 9px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+  }
+}

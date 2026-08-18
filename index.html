@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>京都文学マップ — 小説の聖地を巡る</title>
+  <meta name="description" content="京都を舞台にした小説の登場スポットを地図で巡るサイト" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <header class="site-header">
+        <h1>京都文学マップ</h1>
+        <p class="tagline">小説の中の京都を、地図で巡る。</p>
+      </header>
+
+      <section class="works-section">
+        <h2>作品を選ぶ</h2>
+        <p class="hint">チェックした作品の登場スポットが地図に表示されます。複数選ぶと、作品同士で共有されている場所に <span class="link-badge-sample">リンク</span> が付きます。</p>
+        <ul class="work-list" id="work-list"></ul>
+      </section>
+
+      <footer class="site-footer">
+        <p>地図: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> / Leaflet</p>
+      </footer>
+    </aside>
+
+    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="メニューを開閉">☰ 作品</button>
+
+    <main class="map-container">
+      <div id="map"></div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
