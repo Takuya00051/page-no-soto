@@ -1,9 +1,9 @@
-# 京都文学マップ
+# 頁の外（PAGE NO SOTO）
 
-京都を舞台にした小説の登場スポットを地図で巡る、閲覧専用のサイト。
+小説の登場スポットを地図で巡る、閲覧専用のサイト。京都中心、ときどき京都の外へ。
 静的サイト（Leaflet + OpenStreetMap、APIキー不要）で、データは `data.json` 一つに入っています。
 
-公開URL: https://takuya00051.github.io/ClaudecodeTest2/kyoto-literary-map/
+公開URL: https://takuya00051.github.io/page-no-soto/
 
 ## 使い方（閲覧）
 
@@ -39,10 +39,10 @@ OCRの精度は写真の状態や縦書き・字体によって変わるため�
 
 保存先は2通り:
 
-1. **GitHub トークンを設定した場合（推奨）**: 保存すると `data.json` が GitHub に直接コミットされ、数分でサイトに反映される。
-   - トークンの作り方: GitHub → Settings → Developer settings → **Fine-grained personal access tokens** → Generate new token。対象リポジトリを `ClaudecodeTest2` のみに絞り、Repository permissions の **Contents: Read and write** だけを付与する
+1. **GitHub トークンを設定した場合（推奨）**: 保存すると `data.json` が GitHub に直接コミットされ、1分ほどでサイトに反映される。
+   - トークンの作り方: GitHub → Settings → Developer settings → **Fine-grained personal access tokens** → Generate new token。対象リポジトリを `page-no-soto` のみに絞り、Repository permissions の **Contents: Read and write** だけを付与する
    - 編集パネル内「保存先の設定」にトークンを貼って保存（このブラウザの localStorage にのみ保存される。共用PCでは設定しないこと）
-2. **トークン未設定の場合**: `data.json` がダウンロードされるので、リポジトリの `kyoto-literary-map/data.json` と差し替えて push する
+2. **トークン未設定の場合**: `data.json` がダウンロードされるので、リポジトリの `data.json` と差し替えて push する
 
 閲覧者にも編集ボタンは見えますが、トークンがなければリポジトリには何も書き込めません。
 
@@ -101,4 +101,6 @@ OCRの精度は写真の状態や縦書き・字体によって変わるため�
 | `editor.js` | サイト上の編集機能（GitHub コミット／ダウンロード／写真OCR） |
 | `style.css` | デザイン |
 
-公開ページは同一オリジンの `data.json`（GitHub Pages のデプロイ結果）だけを読みます。`raw.githubusercontent.com` 経由の直接取得は、コミット直後でもエッジキャッシュの反映タイミングがばらつき、更新が反映されないことがあったため使っていません。編集を保存すると GitHub Actions が自動でデプロイし直すので、**保存後1分ほど待ってからリロード**すれば反映されます（Actions の実行状況は [Actions タブ](https://github.com/Takuya00051/ClaudecodeTest2/actions) で確認できます）。
+公開ページは同一オリジンの `data.json`（GitHub Pages のデプロイ結果）だけを読みます。`raw.githubusercontent.com` 経由の直接取得は、コミット直後でもエッジキャッシュの反映タイミングがばらつき、更新が反映されないことがあったため使っていません。編集を保存すると GitHub Pages が自動でデプロイし直すので、**保存後1分ほど待ってからリロード**すれば反映されます（デプロイ状況は [Actions タブ](https://github.com/Takuya00051/page-no-soto/actions) で確認できます）。
+
+このリポジトリは `page-no-soto` 専用です（以前 `ClaudecodeTest2/kyoto-literary-map/` にあったものをここへ移行しました）。GitHub Pages の設定は Settings → Pages → Source: **Deploy from a branch** / `main` / `/ (root)`。

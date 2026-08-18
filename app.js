@@ -3,8 +3,8 @@
 // （データは data.json。サイト上の編集機能は editor.js）
 // ============================================================
 
-const REPO = "Takuya00051/ClaudecodeTest2";
-const DATA_PATH = "kyoto-literary-map/data.json";
+const REPO = "Takuya00051/page-no-soto";
+const DATA_PATH = "data.json";
 
 let SPOTS = {};
 let WORKS = [];
