@@ -193,9 +193,65 @@ function markerIcon(colors) {
   });
 }
 
+// ---- スポット写真（Wikimedia Commons の座標検索） ----
+// spot に photo（画像URL）があればそれを優先。なければ座標周辺の
+// Commons 画像を自動検索する。結果はメモリにキャッシュ。
+const photoCache = new Map();
+
+async function fetchSpotPhoto(spotId, spot) {
+  if (spot.photo) return { url: spot.photo, pageUrl: spot.photoCredit || null };
+  if (photoCache.has(spotId)) return photoCache.get(spotId);
+  let result = null;
+  try {
+    const api =
+      "https://commons.wikimedia.org/w/api.php" +
+      `?action=query&generator=geosearch&ggscoord=${spot.lat}%7C${spot.lng}` +
+      "&ggsradius=300&ggslimit=8&ggsnamespace=6" +
+      "&prop=imageinfo&iiprop=url&iiurlwidth=480&format=json&origin=*";
+    const r = await fetch(api);
+    const j = await r.json();
+    const pages = Object.values((j.query && j.query.pages) || {});
+    const info = pages
+      .map((p) => p.imageinfo && p.imageinfo[0])
+      .find((i) => i && /\.(jpe?g|png)(\?|$)/i.test(i.thumburl || ""));
+    if (info) result = { url: info.thumburl, pageUrl: info.descriptionurl };
+  } catch (e) { /* オフライン等は写真なしで続行 */ }
+  photoCache.set(spotId, result);
+  return result;
+}
+
+function attachPhoto(marker, spotId, spot, contentEl) {
+  marker.on("popupopen", async (e) => {
+    const holder = contentEl.querySelector(".popup-photo");
+    if (!holder || holder.dataset.loaded) return;
+    const photo = await fetchSpotPhoto(spotId, spot);
+    holder.dataset.loaded = "1";
+    if (!photo) { holder.remove(); e.popup.update(); return; }
+    const img = document.createElement("img");
+    img.src = photo.url;
+    img.alt = spot.name;
+    img.addEventListener("load", () => e.popup.update());
+    holder.appendChild(img);
+    if (photo.pageUrl) {
+      const credit = document.createElement("a");
+      credit.className = "popup-photo-credit";
+      credit.href = photo.pageUrl;
+      credit.target = "_blank";
+      credit.rel = "noopener";
+      credit.textContent = "© Wikimedia Commons";
+      holder.appendChild(credit);
+    }
+    e.popup.update();
+  });
+}
+
 function popupHtml(spot, entries) {
   const el = document.createElement("div");
   el.className = "popup";
+
+  const photoHolder = document.createElement("div");
+  photoHolder.className = "popup-photo";
+  el.appendChild(photoHolder);
 
   const name = document.createElement("p");
   name.className = "popup-spot-name";
@@ -224,6 +280,13 @@ function popupHtml(spot, entries) {
     text.textContent = scene.text;
 
     block.append(title, text);
+
+    if (scene.quote) {
+      const quote = document.createElement("blockquote");
+      quote.className = "popup-quote";
+      quote.textContent = scene.quote;
+      block.appendChild(quote);
+    }
     el.appendChild(block);
   });
 
@@ -258,10 +321,12 @@ function render() {
     const spot = SPOTS[spotId];
     const colors = entries.map((e) => e.work.color);
     const marker = L.marker([spot.lat, spot.lng], { icon: markerIcon(colors) });
-    marker.bindPopup(popupHtml(spot, entries), {
+    const content = popupHtml(spot, entries);
+    marker.bindPopup(content, {
       maxWidth: 320,
       autoPanPadding: L.point(40, 40),
     });
+    attachPhoto(marker, spotId, spot, content);
     marker.addTo(markerLayer);
     latLngs.push([spot.lat, spot.lng]);
   });

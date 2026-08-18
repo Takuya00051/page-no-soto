@@ -12,6 +12,7 @@ editorEl.id = "editor";
 editorEl.innerHTML = `
   <button id="editor-toggle" title="編集">✎ 編集</button>
   <div id="editor-panel" hidden>
+    <button id="editor-close" title="閉じる" aria-label="閉じる">×</button>
     <h2>シーンの追加・編集</h2>
 
     <label class="ed-label">作品
@@ -38,6 +39,10 @@ editorEl.innerHTML = `
 
     <label class="ed-label">この場所で何が起きたか
       <textarea id="ed-text" rows="5" placeholder="小説の中でこの場所で起きたことを書く"></textarea>
+    </label>
+
+    <label class="ed-label">該当箇所の文章（引用・省略可）
+      <textarea id="ed-quote" rows="3" placeholder="本文からの短い引用"></textarea>
     </label>
 
     <div class="ed-row">
@@ -71,6 +76,10 @@ let pickMarker = null;
 $("editor-toggle").addEventListener("click", () => {
   panel.hidden = !panel.hidden;
   if (!panel.hidden) refreshSelects();
+});
+
+$("editor-close").addEventListener("click", () => {
+  panel.hidden = true;
 });
 
 // ---- セレクトの中身 ----
@@ -107,6 +116,7 @@ function onSelectionChange() {
 
   const { scene } = newWork || newSpot ? {} : currentScene();
   $("ed-text").value = scene ? scene.text : "";
+  $("ed-quote").value = scene && scene.quote ? scene.quote : "";
   $("ed-save").textContent = scene ? "更新" : "保存";
   $("ed-delete").hidden = !scene;
 }
@@ -158,10 +168,14 @@ $("ed-save").addEventListener("click", async () => {
     SPOTS[spotId] = { name, lat, lng, note: $("ed-spot-note").value.trim() };
   }
 
+  const quote = $("ed-quote").value.trim();
   const work = WORKS.find((w) => w.id === workId);
   const existing = work.scenes.find((s) => s.spot === spotId);
-  if (existing) existing.text = text;
-  else work.scenes.push({ spot: spotId, text });
+  const target = existing || { spot: spotId };
+  target.text = text;
+  if (quote) target.quote = quote;
+  else delete target.quote;
+  if (!existing) work.scenes.push(target);
 
   applyAndPersist(`『${work.title}』のシーンを保存しました。`, workId, spotId);
 });
