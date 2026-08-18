@@ -314,13 +314,28 @@ function attachPhoto(marker, spotId, spot, contentEl) {
   });
 }
 
-function popupHtml(spot, entries) {
+function popupHtml(spotId, spot, entries) {
   const el = document.createElement("div");
   el.className = "popup";
 
   const photoHolder = document.createElement("div");
   photoHolder.className = "popup-photo";
   el.appendChild(photoHolder);
+
+  const visitBtn = document.createElement("button");
+  visitBtn.type = "button";
+  visitBtn.className = "visited-toggle";
+  const setVisitLabel = () => {
+    const done = myLog.visited.has(spotId);
+    visitBtn.textContent = done ? "📍 行った" : "📍 行った にする";
+    visitBtn.classList.toggle("done", done);
+  };
+  setVisitLabel();
+  visitBtn.addEventListener("click", () => {
+    toggleVisited(spotId);
+    setVisitLabel();
+  });
+  el.appendChild(visitBtn);
 
   if (spot.kana) {
     const kana = document.createElement("p");
@@ -405,7 +420,7 @@ function render() {
     const spot = SPOTS[spotId];
     const colors = entries.map((e) => e.work.color);
     const marker = L.marker([spot.lat, spot.lng], { icon: markerIcon(colors) });
-    const content = popupHtml(spot, entries);
+    const content = popupHtml(spotId, spot, entries);
     marker.bindPopup(content, {
       maxWidth: 320,
       // map.getSize() はタブが未描画のタイミングで 0 を返すことがあるため、
@@ -430,6 +445,79 @@ function render() {
     markersBySpot.get(openSpotId).openPopup();
   }
 }
+
+// ---- 個人の読書記録・訪問記録（このブラウザだけに保存） ----
+const MY_LOG_KEY = "kyoto-map-my-log";
+
+function loadMyLog() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(MY_LOG_KEY) || "{}");
+    return { read: new Set(raw.read || []), visited: new Set(raw.visited || []) };
+  } catch (e) {
+    return { read: new Set(), visited: new Set() };
+  }
+}
+
+const myLog = loadMyLog();
+
+function saveMyLog() {
+  localStorage.setItem(
+    MY_LOG_KEY,
+    JSON.stringify({ read: [...myLog.read], visited: [...myLog.visited] })
+  );
+}
+
+function toggleRead(workId) {
+  if (myLog.read.has(workId)) myLog.read.delete(workId);
+  else myLog.read.add(workId);
+  saveMyLog();
+}
+
+function toggleVisited(spotId) {
+  if (myLog.visited.has(spotId)) myLog.visited.delete(spotId);
+  else myLog.visited.add(spotId);
+  saveMyLog();
+}
+
+function renderMyLogPanel() {
+  const readCount = myLog.read.size;
+  const visitedCount = myLog.visited.size;
+  const byRegion = new Map();
+  myLog.visited.forEach((spotId) => {
+    const region = (SPOTS[spotId] && SPOTS[spotId].region) || "その他";
+    byRegion.set(region, (byRegion.get(region) || 0) + 1);
+  });
+  const regionLine = [...byRegion.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([region, count]) => `${region} ${count}ヶ所`)
+    .join("｜");
+
+  return `
+    <p class="mylog-summary">読んだ ${readCount}作品｜訪問 ${visitedCount}ヶ所</p>
+    <p class="mylog-regions">${regionLine || "まだ訪問記録がありません"}</p>
+    <p class="ed-hint">記録はこのブラウザだけに保存されます（他の人には見えません）。ⓘ詳細画面の「📖 読んだ」、地図ピンの「📍 行った」で記録できます。</p>
+  `;
+}
+
+const myLogPanel = document.createElement("div");
+myLogPanel.id = "my-log-panel";
+myLogPanel.hidden = true;
+myLogPanel.innerHTML = `
+  <div class="work-detail-backdrop"></div>
+  <div class="work-detail-card">
+    <button class="work-detail-close" title="閉じる" aria-label="閉じる">×</button>
+    <h2 class="mylog-title">わたしの記録</h2>
+    <div class="mylog-body"></div>
+  </div>
+`;
+document.body.appendChild(myLogPanel);
+myLogPanel.querySelector(".work-detail-close").addEventListener("click", () => { myLogPanel.hidden = true; });
+myLogPanel.querySelector(".work-detail-backdrop").addEventListener("click", () => { myLogPanel.hidden = true; });
+
+document.getElementById("my-log-toggle").addEventListener("click", () => {
+  myLogPanel.querySelector(".mylog-body").innerHTML = renderMyLogPanel();
+  myLogPanel.hidden = false;
+});
 
 // ---- 作品の詳細（表紙・あらすじ） ----
 // work.cover / work.synopsis が手入力されていればそれを優先。
@@ -494,10 +582,23 @@ async function openWorkDetail(work) {
     </div>
     <p class="detail-work-title">${work.title}</p>
     <p class="detail-work-meta">${metaLine}</p>
+    <button type="button" class="read-toggle"></button>
     <div class="detail-synopsis">${work.synopsis ? "" : "あらすじを取得しています…"}</div>
     <div class="detail-scenes"><h3>登場する場所</h3><div class="detail-scene-list">${sceneButtons}</div></div>
     <button type="button" class="detail-edit-btn">この作品を編集する</button>
   `;
+
+  const readBtn = body.querySelector(".read-toggle");
+  const setReadLabel = () => {
+    const done = myLog.read.has(work.id);
+    readBtn.textContent = done ? "📖 読んだ" : "📖 読んだ にする";
+    readBtn.classList.toggle("done", done);
+  };
+  setReadLabel();
+  readBtn.addEventListener("click", () => {
+    toggleRead(work.id);
+    setReadLabel();
+  });
 
   body.querySelectorAll(".detail-scene-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
