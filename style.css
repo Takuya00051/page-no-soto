@@ -53,6 +53,7 @@ html, body {
   font-size: 13px;
   color: var(--ink-soft);
   letter-spacing: 0.04em;
+  text-align: center;
 }
 
 .spot-search-section {
@@ -395,6 +396,16 @@ html, body {
   margin: 0 0 10px;
   line-height: 1.6;
 }
+
+.popup-gmap-link {
+  display: inline-block;
+  font-size: 11px;
+  color: #1a73e8;
+  text-decoration: none;
+  margin-bottom: 10px;
+}
+
+.popup-gmap-link:hover { text-decoration: underline; }
 
 .popup-work {
   border-left: 3px solid;

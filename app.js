@@ -356,6 +356,14 @@ function popupHtml(spotId, spot, entries) {
     el.appendChild(note);
   }
 
+  const gmapLink = document.createElement("a");
+  gmapLink.className = "popup-gmap-link";
+  gmapLink.href = `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`;
+  gmapLink.target = "_blank";
+  gmapLink.rel = "noopener";
+  gmapLink.textContent = "Googleマップで開く";
+  el.appendChild(gmapLink);
+
   entries.forEach(({ work, scene }) => {
     const block = document.createElement("div");
     block.className = "popup-work";
