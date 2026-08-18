@@ -749,6 +749,8 @@ map.on("click", () => sidebar.classList.remove("open"));
 const appReady = loadData().then((data) => {
   SPOTS = data.spots;
   WORKS = data.works;
-  buildWorkList(selectedIdsFromHash() ?? [WORKS[0]?.id].filter(Boolean));
+  // URLにハッシュがなければ何も選択しない状態で始める
+  // （以前は最初の作品を自動選択していたため、開くたびにURLへ #作品id が付いてしまっていた）
+  buildWorkList(selectedIdsFromHash() ?? []);
   render();
 });
