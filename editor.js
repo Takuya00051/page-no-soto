@@ -23,6 +23,7 @@ editorEl.innerHTML = `
       <label class="ed-label">著者 <input id="ed-work-author" type="text" placeholder="例: 森見登美彦"></label>
       <label class="ed-label ed-color">ピンの色 <input id="ed-work-color" type="color" value="#5a7d9a"></label>
     </div>
+    <label class="ed-check"><input type="checkbox" id="ed-draft"> 下書き（読了まで一覧に公開しない）</label>
 
     <label class="ed-label">場所
       <select id="ed-spot"></select>
@@ -143,6 +144,8 @@ function onSelectionChange() {
   resetMoveMode();
 
   const { scene } = newWork || newSpot ? {} : currentScene();
+  const selWork = newWork ? null : WORKS.find((w) => w.id === $("ed-work").value);
+  $("ed-draft").checked = !!(selWork && selWork.draft);
   $("ed-text").value = scene ? scene.text : "";
   $("ed-quote").value = scene && scene.quote ? scene.quote : "";
   $("ed-save").textContent = scene ? "更新" : "保存";
@@ -228,6 +231,8 @@ $("ed-save").addEventListener("click", async () => {
 
   const quote = $("ed-quote").value.trim();
   const work = WORKS.find((w) => w.id === workId);
+  if ($("ed-draft").checked) work.draft = true;
+  else delete work.draft;
   const existing = work.scenes.find((s) => s.spot === spotId);
   const target = existing || { spot: spotId };
   target.text = text;

@@ -130,9 +130,14 @@ function selectedIdsFromHash() {
 // ---- サイドバーの作品リスト ----
 const workListEl = document.getElementById("work-list");
 
+// GitHub トークンが設定されているブラウザ＝サイトのオーナーとみなし、
+// 下書き（draft: true）の作品はオーナーにだけ表示する
+const OWNER_TOKEN_KEY = "kyoto-map-github-token";
+const isOwner = () => !!localStorage.getItem(OWNER_TOKEN_KEY);
+
 function buildWorkList(selectedIds) {
   workListEl.innerHTML = "";
-  WORKS.forEach((work) => {
+  WORKS.filter((w) => !w.draft || isOwner()).forEach((work) => {
     const li = document.createElement("li");
     li.className = "work-item";
 
@@ -147,6 +152,12 @@ function buildWorkList(selectedIds) {
     meta.innerHTML =
       `<span class="work-title"></span><div class="work-author"></div>`;
     meta.querySelector(".work-title").textContent = work.title;
+    if (work.draft) {
+      const badge = document.createElement("span");
+      badge.className = "draft-badge";
+      badge.textContent = "下書き";
+      meta.querySelector(".work-title").appendChild(badge);
+    }
     meta.querySelector(".work-author").textContent =
       `${work.author} ・ ${work.scenes.length}スポット`;
 
@@ -351,6 +362,15 @@ function render() {
     markersBySpot.get(openSpotId).openPopup();
   }
 }
+
+// ---- 表示中のピンに画面を合わせる ----
+document.getElementById("fit-pins").addEventListener("click", () => {
+  const lls = [...markersBySpot.values()].map((m) => m.getLatLng());
+  if (lls.length) {
+    map.fitBounds(L.latLngBounds(lls).pad(0.2), { maxZoom: 15 });
+  }
+  sidebar.classList.remove("open");
+});
 
 // ---- モバイル用サイドバー開閉 ----
 const sidebar = document.getElementById("sidebar");
