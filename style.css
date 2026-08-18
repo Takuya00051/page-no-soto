@@ -167,9 +167,9 @@ html, body {
   font-family: "Noto Sans JP", sans-serif;
 }
 
-.leaflet-popup-content { margin: 16px 18px; width: auto !important; }
+.leaflet-popup-content { margin: 16px 18px; }
 
-.popup { max-width: 300px; }
+.popup { width: 280px; max-width: calc(100vw - 90px); }
 
 .popup-spot-name {
   font-family: "Noto Serif JP", serif;
@@ -206,6 +206,29 @@ html, body {
   line-height: 1.75;
   margin: 0;
   color: var(--ink);
+}
+
+/* ---------- 方位・現在地 ---------- */
+.compass {
+  pointer-events: none;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
+}
+
+.locate-btn {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+}
+
+.locate-btn.active {
+  background: #e8f0fe;
+  border-color: #1a73e8;
 }
 
 /* ---------- 編集パネル ---------- */

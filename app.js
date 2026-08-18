@@ -19,6 +19,88 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 const markerLayer = L.layerGroup().addTo(map);
 
+// ---- 方位表示（地図は常に北が上） ----
+const compass = L.control({ position: "topright" });
+compass.onAdd = () => {
+  const el = L.DomUtil.create("div", "compass");
+  el.innerHTML =
+    '<svg viewBox="0 0 60 60" width="56" height="56" aria-label="方位: 上が北">' +
+    '<circle cx="30" cy="30" r="27" fill="rgba(255,255,255,0.92)" stroke="#c9c2b6"/>' +
+    '<polygon points="30,17 34,30 30,28 26,30" fill="#b3261e"/>' +
+    '<polygon points="30,43 34,30 30,32 26,30" fill="#9b9488"/>' +
+    '<text x="30" y="13.5" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#2b2620">北</text>' +
+    '<text x="30" y="53.5" text-anchor="middle" font-size="8.5" fill="#6b6257">南</text>' +
+    '<text x="48.5" y="33.5" text-anchor="middle" font-size="8.5" fill="#6b6257">東</text>' +
+    '<text x="11.5" y="33.5" text-anchor="middle" font-size="8.5" fill="#6b6257">西</text>' +
+    "</svg>";
+  return el;
+};
+compass.addTo(map);
+
+// ---- 現在地表示 ----
+let geoWatchId = null;
+let geoMarker = null;
+let geoCircle = null;
+let geoFirstFix = false;
+
+const locateCtl = L.control({ position: "bottomright" });
+locateCtl.onAdd = () => {
+  const btn = L.DomUtil.create("button", "locate-btn");
+  btn.type = "button";
+  btn.title = "現在地を表示";
+  btn.textContent = "📍";
+  L.DomEvent.disableClickPropagation(btn);
+  btn.addEventListener("click", () => toggleLocate(btn));
+  return btn;
+};
+locateCtl.addTo(map);
+
+function stopLocate(btn) {
+  if (geoWatchId !== null) navigator.geolocation.clearWatch(geoWatchId);
+  geoWatchId = null;
+  if (geoMarker) { map.removeLayer(geoMarker); geoMarker = null; }
+  if (geoCircle) { map.removeLayer(geoCircle); geoCircle = null; }
+  btn.classList.remove("active");
+}
+
+function toggleLocate(btn) {
+  if (geoWatchId !== null) return stopLocate(btn);
+  if (!("geolocation" in navigator)) {
+    alert("この端末では位置情報を利用できません。");
+    return;
+  }
+  geoFirstFix = true;
+  btn.classList.add("active");
+  geoWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const ll = [pos.coords.latitude, pos.coords.longitude];
+      if (!geoMarker) {
+        geoCircle = L.circle(ll, {
+          radius: pos.coords.accuracy,
+          color: "#1a73e8", weight: 1, opacity: 0.4,
+          fillColor: "#1a73e8", fillOpacity: 0.12,
+        }).addTo(map);
+        geoMarker = L.circleMarker(ll, {
+          radius: 8, color: "#fff", weight: 3,
+          fillColor: "#1a73e8", fillOpacity: 1,
+        }).addTo(map);
+      } else {
+        geoMarker.setLatLng(ll);
+        geoCircle.setLatLng(ll).setRadius(pos.coords.accuracy);
+      }
+      if (geoFirstFix) {
+        map.setView(ll, Math.max(map.getZoom(), 15));
+        geoFirstFix = false;
+      }
+    },
+    (err) => {
+      alert("現在地を取得できませんでした（" + err.message + "）");
+      stopLocate(btn);
+    },
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+  );
+}
+
 // 公開サイトでは GitHub の最新データを優先して取得する
 // （Pages の再ビルドを待たずに編集結果が反映される）。失敗時は同梱の data.json。
 async function loadData() {
@@ -176,7 +258,10 @@ function render() {
     const spot = SPOTS[spotId];
     const colors = entries.map((e) => e.work.color);
     const marker = L.marker([spot.lat, spot.lng], { icon: markerIcon(colors) });
-    marker.bindPopup(popupHtml(spot, entries), { maxWidth: 320 });
+    marker.bindPopup(popupHtml(spot, entries), {
+      maxWidth: 320,
+      autoPanPadding: L.point(40, 40),
+    });
     marker.addTo(markerLayer);
     latLngs.push([spot.lat, spot.lng]);
   });
