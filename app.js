@@ -103,18 +103,12 @@ function toggleLocate(btn) {
 
 // 公開サイトでは GitHub の最新データを優先して取得する
 // （Pages の再ビルドを待たずに編集結果が反映される）。失敗時は同梱の data.json。
+// raw.githubusercontent.com はエッジキャッシュの反映タイミングが
+// リクエストごとにばらつき、コミット直後でも古い内容が返ることがあるため使わない。
+// 同一オリジンの data.json（GitHub Pages のデプロイ結果）だけを読む。
+// 編集後の反映は GitHub Actions のデプロイ完了後（通常1分ほど）。
 async function loadData() {
-  const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
-  if (!isLocal) {
-    try {
-      const r = await fetch(
-        `https://raw.githubusercontent.com/${REPO}/main/${DATA_PATH}?t=${Date.now()}`,
-        { cache: "no-store" }
-      );
-      if (r.ok) return await r.json();
-    } catch (e) { /* fall through */ }
-  }
-  const r = await fetch("data.json", { cache: "no-store" });
+  const r = await fetch(`data.json?t=${Date.now()}`, { cache: "no-store" });
   return await r.json();
 }
 

@@ -503,7 +503,7 @@ async function persistData(doneMsg) {
   try {
     status("GitHub に保存中…");
     await commitData();
-    status(doneMsg + " GitHub にコミットしました（リロードで反映されます）。");
+    status(doneMsg + " GitHub にコミットしました（サイトの反映まで1分ほどかかります。少し待ってからリロードしてください）。");
   } catch (e) {
     downloadData();
     status(`GitHub への保存に失敗（${e.message}）。data.json をダウンロードしたので手動で差し替えてください。`, true);

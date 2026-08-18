@@ -101,4 +101,4 @@ OCRの精度は写真の状態や縦書き・字体によって変わるため�
 | `editor.js` | サイト上の編集機能（GitHub コミット／ダウンロード／写真OCR） |
 | `style.css` | デザイン |
 
-公開ページは GitHub の main ブランチ上の `data.json` を直接読むため、編集のコミット後すぐ（リロードで）反映されます。GitHub Pages の再ビルドを待つ必要はありません。
+公開ページは同一オリジンの `data.json`（GitHub Pages のデプロイ結果）だけを読みます。`raw.githubusercontent.com` 経由の直接取得は、コミット直後でもエッジキャッシュの反映タイミングがばらつき、更新が反映されないことがあったため使っていません。編集を保存すると GitHub Actions が自動でデプロイし直すので、**保存後1分ほど待ってからリロード**すれば反映されます（Actions の実行状況は [Actions タブ](https://github.com/Takuya00051/ClaudecodeTest2/actions) で確認できます）。
