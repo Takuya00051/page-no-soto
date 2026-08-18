@@ -212,7 +212,17 @@ function buildWorkList(selectedIds) {
       render();
     });
 
-    label.append(dot, meta, checkbox);
+    const infoBtn = document.createElement("button");
+    infoBtn.type = "button";
+    infoBtn.className = "work-info-btn";
+    infoBtn.title = "作品の詳細を見る";
+    infoBtn.textContent = "ⓘ";
+    infoBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      openWorkDetail(work);
+    });
+
+    label.append(dot, meta, infoBtn, checkbox);
     li.appendChild(label);
     workListEl.appendChild(li);
   });
@@ -405,7 +415,7 @@ function render() {
 
   // 地図の全体移動は初回表示のときだけ。以降はユーザーの視点を保つ
   if (latLngs.length && !didInitialFit) {
-    map.fitBounds(L.latLngBounds(latLngs).pad(0.2), { maxZoom: 15 });
+    map.fitBounds(L.latLngBounds(latLngs).pad(0.2), { maxZoom: 15, animate: false });
     didInitialFit = true;
   }
 
@@ -415,11 +425,191 @@ function render() {
   }
 }
 
+// ---- 作品の詳細（表紙・あらすじ） ----
+// work.cover / work.synopsis が手入力されていればそれを優先。
+// なければ Google Books API でベストエフォート取得を試みる（失敗しても致命的ではない）。
+const bookInfoCache = new Map();
+
+async function fetchBookInfo(work) {
+  if (bookInfoCache.has(work.id)) return bookInfoCache.get(work.id);
+  let result = null;
+  try {
+    const q = `intitle:${encodeURIComponent(work.title)}+inauthor:${encodeURIComponent(work.author)}`;
+    const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&country=JP&maxResults=1`);
+    const j = await r.json();
+    const info = j.items && j.items[0] && j.items[0].volumeInfo;
+    if (info) {
+      result = {
+        cover: info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail),
+        description: info.description,
+        infoLink: info.infoLink,
+      };
+    }
+  } catch (e) { /* オフライン・APIエラー時は取得なしで続行 */ }
+  bookInfoCache.set(work.id, result);
+  return result;
+}
+
+const detailEl = document.createElement("div");
+detailEl.id = "work-detail";
+detailEl.hidden = true;
+detailEl.innerHTML = `
+  <div class="work-detail-backdrop"></div>
+  <div class="work-detail-card">
+    <button class="work-detail-close" title="閉じる" aria-label="閉じる">×</button>
+    <div class="work-detail-body"></div>
+  </div>
+`;
+document.body.appendChild(detailEl);
+
+function closeWorkDetail() {
+  detailEl.hidden = true;
+}
+detailEl.querySelector(".work-detail-close").addEventListener("click", closeWorkDetail);
+detailEl.querySelector(".work-detail-backdrop").addEventListener("click", closeWorkDetail);
+
+async function openWorkDetail(work) {
+  const body = detailEl.querySelector(".work-detail-body");
+  detailEl.hidden = false;
+
+  const metaLine = [work.author, work.year ? `${work.year}年` : null].filter(Boolean).join(" ・ ");
+  const sceneButtons = work.scenes
+    .map((scene) => {
+      const spot = SPOTS[scene.spot];
+      return spot
+        ? `<button type="button" class="detail-scene-btn" data-spot="${scene.spot}">${spot.name}</button>`
+        : "";
+    })
+    .join("");
+
+  body.innerHTML = `
+    <div class="detail-cover-holder">
+      <div class="detail-cover-loading">表紙を探しています…</div>
+    </div>
+    <p class="detail-work-title">${work.title}</p>
+    <p class="detail-work-meta">${metaLine}</p>
+    <div class="detail-synopsis">${work.synopsis ? "" : "あらすじを取得しています…"}</div>
+    <div class="detail-scenes"><h3>登場する場所</h3><div class="detail-scene-list">${sceneButtons}</div></div>
+    <button type="button" class="detail-edit-btn">この作品を編集する</button>
+  `;
+
+  body.querySelectorAll(".detail-scene-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      closeWorkDetail();
+      selectedWorkIds.add(work.id);
+      buildWorkList();
+      render();
+      focusSpot(btn.dataset.spot);
+    });
+  });
+  body.querySelector(".detail-edit-btn").addEventListener("click", () => {
+    closeWorkDetail();
+    if (window.openEditorForWork) window.openEditorForWork(work.id);
+  });
+
+  // 表紙: 手入力があれば即表示、なければ自動取得を試みる
+  const coverHolder = body.querySelector(".detail-cover-holder");
+  if (work.cover) {
+    coverHolder.innerHTML = `<img src="${work.cover}" alt="${work.title}">`;
+  } else {
+    const info = await fetchBookInfo(work);
+    if (detailEl.hidden) return; // 取得中に閉じられていたら何もしない
+    if (info && info.cover) {
+      coverHolder.innerHTML = `<img src="${info.cover}" alt="${work.title}">`;
+    } else {
+      coverHolder.innerHTML = `<div class="detail-cover-none">表紙画像は見つかりませんでした</div>`;
+    }
+  }
+
+  // あらすじ: 手入力があればそれを表示、なければ自動取得（Google Books のAPI経由の紹介文）
+  const synEl = body.querySelector(".detail-synopsis");
+  if (work.synopsis) {
+    synEl.textContent = work.synopsis;
+  } else {
+    const info = await fetchBookInfo(work);
+    if (detailEl.hidden) return;
+    if (info && info.description) {
+      synEl.textContent = info.description;
+      if (info.infoLink) {
+        const link = document.createElement("a");
+        link.href = info.infoLink;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.className = "detail-source-link";
+        link.textContent = "Google Books で見る";
+        synEl.after(link);
+      }
+    } else {
+      synEl.textContent = "あらすじは見つかりませんでした。編集画面から手入力できます。";
+    }
+  }
+}
+
+// 指定したスポットへ地図を移動してポップアップを開く
+// 初回表示の fitBounds アニメーションと競合すると位置がずれるため、
+// このジャンプ系の移動は常に animate:false（瞬間移動）にする。
+function focusSpot(spotId) {
+  const spot = SPOTS[spotId];
+  if (!spot) return;
+  const zoom = Math.max(Number.isFinite(map.getZoom()) ? map.getZoom() : 14, 16);
+  map.setView([spot.lat, spot.lng], zoom, { animate: false });
+  const marker = markersBySpot.get(spotId);
+  if (marker) marker.openPopup();
+  sidebar.classList.remove("open");
+}
+
+// ---- 場所で検索 ----
+const spotSearchEl = document.getElementById("spot-search");
+const spotResultsEl = document.getElementById("spot-search-results");
+
+function matchingSpots(q) {
+  const needle = q.trim().toLowerCase();
+  if (!needle) return [];
+  return Object.entries(SPOTS)
+    .filter(([, s]) => s.name.toLowerCase().includes(needle) || (s.kana || "").includes(needle))
+    .slice(0, 8);
+}
+
+spotSearchEl.addEventListener("input", () => {
+  const matches = matchingSpots(spotSearchEl.value);
+  spotResultsEl.innerHTML = "";
+  if (!matches.length) { spotResultsEl.hidden = true; return; }
+  matches.forEach(([id, spot]) => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = spot.name;
+    btn.addEventListener("click", () => selectSpotFromSearch(id));
+    li.appendChild(btn);
+    spotResultsEl.appendChild(li);
+  });
+  spotResultsEl.hidden = false;
+});
+
+document.addEventListener("click", (e) => {
+  if (!spotResultsEl.contains(e.target) && e.target !== spotSearchEl) {
+    spotResultsEl.hidden = true;
+  }
+});
+
+function selectSpotFromSearch(spotId) {
+  const linkedWorks = WORKS.filter(
+    (w) => (!w.draft || isOwner()) && w.scenes.some((s) => s.spot === spotId)
+  );
+  linkedWorks.forEach((w) => selectedWorkIds.add(w.id));
+  buildWorkList();
+  render();
+  focusSpot(spotId);
+  spotSearchEl.value = "";
+  spotResultsEl.hidden = true;
+  spotResultsEl.innerHTML = "";
+}
+
 // ---- 表示中のピンに画面を合わせる ----
 document.getElementById("fit-pins").addEventListener("click", () => {
   const lls = [...markersBySpot.values()].map((m) => m.getLatLng());
   if (lls.length) {
-    map.fitBounds(L.latLngBounds(lls).pad(0.2), { maxZoom: 15 });
+    map.fitBounds(L.latLngBounds(lls).pad(0.2), { maxZoom: 15, animate: false });
   }
   sidebar.classList.remove("open");
 });

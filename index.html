@@ -16,8 +16,17 @@
     <aside class="sidebar" id="sidebar">
       <header class="site-header">
         <h1>京都文学マップ</h1>
-        <p class="tagline">小説の中の京都を、地図で巡る。ときどき京都の外へ。</p>
+        <p class="tagline">ページの外を、地図で巡る。</p>
       </header>
+
+      <section class="spot-search-section">
+        <h2>場所で探す</h2>
+        <p class="hint">場所の名前で検索すると、地図がそこへ移動し、関連する作品に自動でチェックが入ります。</p>
+        <div class="spot-search-wrap">
+          <input id="spot-search" class="work-search" type="search" placeholder="例: 糺の森" autocomplete="off">
+          <ul id="spot-search-results" class="spot-search-results" hidden></ul>
+        </div>
+      </section>
 
       <section class="works-section">
         <h2>作品を選ぶ</h2>
@@ -52,6 +61,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="landmarks.js"></script>
   <script src="app.js"></script>
   <script src="editor.js"></script>
 </body>

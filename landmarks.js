@@ -1,0 +1,61 @@
+// ============================================================
+// 京都文学マップ 地名候補辞書
+// data.json の SPOTS にまだ登録されていない有名な地名の候補リスト。
+// 写真OCR機能が、読み取ったテキストの中からここに含まれる地名を
+// 見つけて「新しい場所の候補」として提案するために使う。
+// 座標は登録時に Nominatim（OpenStreetMap）で自動検索するため、
+// ここでは名前だけを持たせている。
+// ============================================================
+
+const KNOWN_LANDMARKS = [
+  { id: "kinkakuji", name: "金閣寺" },
+  { id: "ginkakuji", name: "銀閣寺" },
+  { id: "kiyomizudera", name: "清水寺" },
+  { id: "fushimi-inari", name: "伏見稲荷大社" },
+  { id: "arashiyama", name: "嵐山" },
+  { id: "togetsukyo", name: "渡月橋" },
+  { id: "chikurin", name: "竹林の小径" },
+  { id: "nijojo", name: "二条城" },
+  { id: "heian-jingu", name: "平安神宮" },
+  { id: "yasaka-jinja", name: "八坂神社" },
+  { id: "gion", name: "祇園" },
+  { id: "hanamikoji", name: "花見小路" },
+  { id: "nanzenji", name: "南禅寺" },
+  { id: "tetsugaku-no-michi", name: "哲学の道" },
+  { id: "kifune-jinja", name: "貴船神社" },
+  { id: "kurama-dera", name: "鞍馬寺" },
+  { id: "tenryuji", name: "天龍寺" },
+  { id: "ryoanji", name: "龍安寺" },
+  { id: "sanjusangendo", name: "三十三間堂" },
+  { id: "toji", name: "東寺" },
+  { id: "kitano-tenmangu", name: "北野天満宮" },
+  { id: "shimogamo-honmiya", name: "下鴨神社本宮" },
+  { id: "kamigamo-jinja", name: "上賀茂神社" },
+  { id: "nishiki-market", name: "錦市場" },
+  { id: "teramachi", name: "寺町通" },
+  { id: "shijo-kawaramachi", name: "四条河原町" },
+  { id: "sanjo-ohashi", name: "三条大橋" },
+  { id: "shijo-ohashi", name: "四条大橋" },
+  { id: "kamo-ohashi", name: "賀茂大橋" },
+  { id: "marutamachi", name: "丸太町" },
+  { id: "imadegawa", name: "今出川" },
+  { id: "hyakumanben", name: "百万遍" },
+  { id: "shirakawa", name: "白川" },
+  { id: "gojozaka", name: "五条坂" },
+  { id: "higashiyama", name: "東山" },
+  { id: "kyoto-station", name: "京都駅" },
+  { id: "nijo-station", name: "二条駅" },
+  { id: "sanjo-keihan", name: "三条京阪" },
+  { id: "shugakuin", name: "修学院離宮" },
+  { id: "enryakuji", name: "延暦寺" },
+  { id: "hieizan", name: "比叡山" },
+  { id: "ohara", name: "大原" },
+  { id: "sagano", name: "嵯峨野" },
+  { id: "uji", name: "宇治" },
+  { id: "byodoin", name: "平等院" },
+  { id: "fushimi-sake", name: "伏見" },
+  { id: "toei-eigamura", name: "東映太秦映画村" },
+  { id: "nishijin", name: "西陣" },
+  { id: "kamogawa-nijo", name: "鴨川二条大橋" },
+  { id: "demachi-masugata", name: "出町桝形商店街" },
+];
