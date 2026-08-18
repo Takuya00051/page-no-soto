@@ -104,3 +104,5 @@ OCRの精度は写真の状態や縦書き・字体によって変わるため�
 公開ページは同一オリジンの `data.json`（GitHub Pages のデプロイ結果）だけを読みます。`raw.githubusercontent.com` 経由の直接取得は、コミット直後でもエッジキャッシュの反映タイミングがばらつき、更新が反映されないことがあったため使っていません。編集を保存すると GitHub Pages が自動でデプロイし直すので、**保存後1分ほど待ってからリロード**すれば反映されます（デプロイ状況は [Actions タブ](https://github.com/Takuya00051/page-no-soto/actions) で確認できます）。
 
 このリポジトリは `page-no-soto` 専用です（以前 `ClaudecodeTest2/kyoto-literary-map/` にあったものをここへ移行しました）。GitHub Pages の設定は Settings → Pages → Source: **Deploy from a branch** / `main` / `/ (root)`。
+
+`app.js` / `editor.js` / `style.css` / `landmarks.js` はブラウザに10分キャッシュされる（GitHub Pagesの既定）。`index.html` の `<script src="app.js?v=2">` のように付けている `?v=N` がキャッシュ回避の目印なので、**これらのファイルを更新するたびに `index.html` 内の該当する `?v=N` を1つずつ増やす**こと（data.json自体は別途 `?t=タイムスタンプ` で常にキャッシュ回避しているので対象外）。
