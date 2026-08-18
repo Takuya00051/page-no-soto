@@ -10,7 +10,7 @@ const NEW = "__new__";
 const editorEl = document.createElement("div");
 editorEl.id = "editor";
 editorEl.innerHTML = `
-  <button id="editor-toggle" title="編集">✎ 編集</button>
+  <button id="editor-toggle" title="新しいピンを追加">📍 ピンを追加</button>
   <div id="editor-panel" hidden>
     <button id="editor-close" title="閉じる" aria-label="閉じる">×</button>
     <h2>シーンの追加・編集</h2>
@@ -105,7 +105,8 @@ let pickMarker = null;
 
 $("editor-toggle").addEventListener("click", () => {
   panel.hidden = !panel.hidden;
-  if (!panel.hidden) refreshSelects();
+  // メインボタンは「新しいピンを追加」が主用途なので、場所は新規作成側を既定にする
+  if (!panel.hidden) refreshSelects(undefined, NEW);
 });
 
 $("editor-close").addEventListener("click", () => {
@@ -194,6 +195,13 @@ function onSelectionChange() {
 window.openEditorForWork = (workId) => {
   panel.hidden = false;
   refreshSelects(workId);
+};
+
+// ピンのポップアップの「✎」から、その作品×場所の組み合わせを直接開く
+window.openEditorForScene = (workId, spotId) => {
+  panel.hidden = false;
+  refreshSelects(workId, spotId);
+  panel.querySelector("h2").scrollIntoView({ block: "start", behavior: "smooth" });
 };
 
 $("ed-work").addEventListener("change", onSelectionChange);

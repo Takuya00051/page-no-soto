@@ -363,16 +363,31 @@ function popupHtml(spotId, spot, entries) {
     block.className = "popup-work";
     block.style.borderLeftColor = work.color;
 
+    const titleRow = document.createElement("div");
+    titleRow.className = "popup-work-title-row";
+
     const title = document.createElement("p");
     title.className = "popup-work-title";
     title.style.color = work.color;
     title.textContent = `『${work.title}』${work.author}`;
 
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "popup-scene-edit-btn";
+    editBtn.title = "このシーンを編集";
+    editBtn.textContent = "✎";
+    editBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (window.openEditorForScene) window.openEditorForScene(work.id, spotId);
+    });
+
+    titleRow.append(title, editBtn);
+
     const text = document.createElement("p");
     text.className = "popup-work-text";
     text.textContent = scene.text;
 
-    block.append(title, text);
+    block.append(titleRow, text);
 
     if (scene.quote) {
       const quote = document.createElement("blockquote");
