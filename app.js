@@ -102,13 +102,6 @@ function popupHtml(spot, entries) {
     el.appendChild(note);
   }
 
-  if (entries.length > 1) {
-    const badge = document.createElement("span");
-    badge.className = "popup-link-note";
-    badge.textContent = `${entries.length}作品がリンクする場所`;
-    el.appendChild(badge);
-  }
-
   entries.forEach(({ work, scene }) => {
     const block = document.createElement("div");
     block.className = "popup-work";
