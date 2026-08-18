@@ -497,6 +497,18 @@ html, body {
 
 .popup-photo-credit:hover { text-decoration: underline; }
 
+.popup-photo-empty { min-height: 4px; }
+
+.popup-photo-search {
+  display: inline-block;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  margin-top: 4px;
+}
+
+.popup-photo-search:hover { color: var(--accent); text-decoration: underline; }
+
 /* ---------- 方位・現在地 ---------- */
 .compass {
   pointer-events: none;

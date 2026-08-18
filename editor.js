@@ -506,7 +506,7 @@ async function persistData(doneMsg) {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) {
     downloadData();
-    return status(doneMsg + " トークン未設定のため data.json をダウンロードしました。リポジトリの kyoto-literary-map/data.json と差し替えて push してください。");
+    return status(doneMsg + ` トークン未設定のため data.json をダウンロードしました。リポジトリの ${DATA_PATH} と差し替えて push してください。`);
   }
   try {
     status("GitHub に保存中…");

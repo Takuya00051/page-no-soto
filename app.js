@@ -283,19 +283,39 @@ async function fetchSpotPhoto(spotId, spot) {
   return result;
 }
 
+// 座標検索の自動取得は的外れな写真を拾うことがあるため、
+// 常に「この場所名でGoogle画像検索」へのリンクを添えて自分で確認できるようにする
+function googleImageSearchUrl(spot) {
+  const q = [spot.name, spot.region].filter(Boolean).join(" ");
+  return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`;
+}
+
 function attachPhoto(marker, spotId, spot, contentEl) {
   marker.on("popupopen", async (e) => {
     const holder = contentEl.querySelector(".popup-photo");
     if (!holder || holder.dataset.loaded) return;
-    const photo = await fetchSpotPhoto(spotId, spot);
     holder.dataset.loaded = "1";
-    if (!photo) { holder.remove(); e.popup.update(); return; }
-    const img = document.createElement("img");
-    img.src = photo.url;
-    img.alt = spot.name;
-    img.addEventListener("load", () => e.popup.update());
-    holder.appendChild(img);
-    if (photo.pageUrl) {
+    const photo = await fetchSpotPhoto(spotId, spot);
+
+    if (photo) {
+      const img = document.createElement("img");
+      img.src = photo.url;
+      img.alt = spot.name;
+      img.addEventListener("load", () => e.popup.update());
+      holder.appendChild(img);
+    } else {
+      holder.classList.add("popup-photo-empty");
+    }
+
+    const searchLink = document.createElement("a");
+    searchLink.className = "popup-photo-search";
+    searchLink.href = googleImageSearchUrl(spot);
+    searchLink.target = "_blank";
+    searchLink.rel = "noopener";
+    searchLink.textContent = photo ? "🔍 違う写真を探す" : "🔍 写真を検索";
+    holder.appendChild(searchLink);
+
+    if (photo && photo.pageUrl) {
       const credit = document.createElement("a");
       credit.className = "popup-photo-credit";
       credit.href = photo.pageUrl;
