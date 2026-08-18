@@ -219,10 +219,13 @@ function buildWorkList(selectedIds) {
     infoBtn.textContent = "ⓘ";
     infoBtn.addEventListener("click", (e) => {
       e.preventDefault();
+      e.stopPropagation();
       openWorkDetail(work);
     });
 
-    label.append(dot, meta, infoBtn, checkbox);
+    // ⓘ ボタンをチェックボックスから離して誤タップを防ぐため、
+    // 色ドットのすぐ右（本文の左）に置く
+    label.append(dot, infoBtn, meta, checkbox);
     li.appendChild(label);
     workListEl.appendChild(li);
   });
@@ -405,6 +408,9 @@ function render() {
     const content = popupHtml(spot, entries);
     marker.bindPopup(content, {
       maxWidth: 320,
+      // map.getSize() はタブが未描画のタイミングで 0 を返すことがあるため、
+      // ウィンドウの高さから安全に計算する
+      maxHeight: Math.max(200, Math.round(window.innerHeight * 0.6)),
       autoPanPadding: L.point(40, 40),
     });
     attachPhoto(marker, spotId, spot, content);
