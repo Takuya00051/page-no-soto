@@ -214,9 +214,30 @@ function buildWorkList(selectedIds) {
 
       const ul = document.createElement("ul");
       ul.className = "work-group-list";
-      works.forEach((work) => ul.appendChild(createWorkItemEl(work)));
 
-      details.append(summary, ul);
+      // グループを開いたときの一番上に「すべて選択する」（全員選択済みなら「すべて解除する」）
+      const selectAllBtn = document.createElement("button");
+      selectAllBtn.type = "button";
+      selectAllBtn.className = "work-group-select-all";
+      const updateSelectAllLabel = () => {
+        const allSelected = works.every((w) => selectedWorkIds.has(w.id));
+        selectAllBtn.textContent = allSelected ? "すべて解除する" : "すべて選択する";
+      };
+
+      works.forEach((work) => ul.appendChild(createWorkItemEl(work, updateSelectAllLabel)));
+      updateSelectAllLabel();
+      selectAllBtn.addEventListener("click", () => {
+        const allSelected = works.every((w) => selectedWorkIds.has(w.id));
+        works.forEach((w) => {
+          if (allSelected) selectedWorkIds.delete(w.id);
+          else selectedWorkIds.add(w.id);
+        });
+        ul.querySelectorAll('input[type="checkbox"]').forEach((cb) => { cb.checked = !allSelected; });
+        updateSelectAllLabel();
+        render();
+      });
+
+      details.append(summary, selectAllBtn, ul);
       groupLi.appendChild(details);
       workListEl.appendChild(groupLi);
     });
@@ -226,7 +247,7 @@ function buildWorkList(selectedIds) {
   list.forEach((work) => workListEl.appendChild(createWorkItemEl(work)));
 }
 
-function createWorkItemEl(work) {
+function createWorkItemEl(work, onToggle) {
     const li = document.createElement("li");
     li.className = "work-item";
 
@@ -260,6 +281,7 @@ function createWorkItemEl(work) {
       if (checkbox.checked) selectedWorkIds.add(work.id);
       else selectedWorkIds.delete(work.id);
       render();
+      if (onToggle) onToggle();
     });
 
     const infoBtn = document.createElement("button");
@@ -953,7 +975,13 @@ function selectExternalSearchResult(lat, lng, label) {
 
   if (tempSearchMarker) map.removeLayer(tempSearchMarker);
   tempSearchMarker = createDeletableMarker([lat, lng], () => { tempSearchMarker = null; });
-  tempSearchMarker.bindPopup(content).addTo(map).openPopup();
+  const thisTempMarker = tempSearchMarker;
+  // ポップアップ自体の×で閉じたときも、仮ピンを地図上に残さない
+  thisTempMarker.on("popupclose", () => {
+    map.removeLayer(thisTempMarker);
+    if (tempSearchMarker === thisTempMarker) tempSearchMarker = null;
+  });
+  thisTempMarker.bindPopup(content).addTo(map).openPopup();
   map.setView([lat, lng], 16, { animate: false });
   sidebar.classList.remove("open");
   spotSearchEl.value = "";
@@ -996,7 +1024,13 @@ function showQuickAddPinPrompt(latlng) {
   content.appendChild(btn);
 
   quickAddMarker = createDeletableMarker(latlng, () => { quickAddMarker = null; });
-  quickAddMarker.bindPopup(content).addTo(map).openPopup();
+  const thisQuickMarker = quickAddMarker;
+  // ポップアップ自体の×で閉じたときも、仮ピンを地図上に残さない
+  thisQuickMarker.on("popupclose", () => {
+    map.removeLayer(thisQuickMarker);
+    if (quickAddMarker === thisQuickMarker) quickAddMarker = null;
+  });
+  thisQuickMarker.bindPopup(content).addTo(map).openPopup();
 }
 
 // 開いていたポップアップを閉じるためのクリックでは「ここにピンを追加」を出さない。

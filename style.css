@@ -210,6 +210,21 @@ details[open] > .work-group-summary::before { content: "▾ "; }
   padding: 0 0 0 4px;
 }
 
+.work-group-select-all {
+  display: block;
+  margin: 0 0 8px 4px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.work-group-select-all:hover { border-color: var(--accent); color: var(--accent); }
+
 .work-item {
   border: 1px solid var(--line);
   border-radius: 10px;
