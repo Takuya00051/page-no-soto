@@ -773,7 +773,8 @@ html, body {
 .ed-candidate-chip:hover { background: var(--accent); color: #fff; }
 
 /* ---------- 作品詳細モーダル ---------- */
-#work-detail { position: fixed; inset: 0; z-index: 2000; }
+#work-detail,
+#my-log-panel { position: fixed; inset: 0; z-index: 2000; }
 
 .work-detail-backdrop {
   position: absolute;
