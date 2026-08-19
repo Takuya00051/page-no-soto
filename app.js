@@ -999,8 +999,18 @@ function showQuickAddPinPrompt(latlng) {
   quickAddMarker.bindPopup(content).addTo(map).openPopup();
 }
 
+// 開いていたポップアップを閉じるためのクリックでは「ここにピンを追加」を出さない。
+// Leafletは地図クリックで既存のポップアップを閉じる際、click イベントより先に
+// popupclose を発火するので、そのタイミングをフラグで拾ってこのクリックだけ無視する。
+let popupJustClosedByClick = false;
+map.on("popupclose", () => { popupJustClosedByClick = true; });
+
 map.on("click", (e) => {
   sidebar.classList.remove("open");
+  if (popupJustClosedByClick) {
+    popupJustClosedByClick = false;
+    return;
+  }
   const editorPanel = document.getElementById("editor-panel");
   if (editorPanel && !editorPanel.hidden) return; // 編集パネル側の地図クリック処理に任せる
   showQuickAddPinPrompt(e.latlng);
