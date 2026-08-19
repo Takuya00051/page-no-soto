@@ -504,12 +504,50 @@ function toggleVisited(spotId) {
   saveMyLog();
 }
 
-function renderMyLogPanel() {
-  const readCount = myLog.read.size;
-  const visitedCount = myLog.visited.size;
+// 「読んだ」「訪問」のどちらかを押すと、その一覧が開閉するトグル行を作る
+function buildMylogStat(labelPrefix, unit, items, renderItem) {
+  const wrap = document.createElement("div");
+  wrap.className = "mylog-stat";
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "mylog-stat-toggle";
+  toggle.textContent = `${labelPrefix} ${items.length}${unit} ▾`;
+
+  const list = document.createElement("ul");
+  list.className = "mylog-list";
+  list.hidden = true;
+
+  if (!items.length) {
+    const li = document.createElement("li");
+    li.className = "mylog-list-empty";
+    li.textContent = "まだ記録がありません";
+    list.appendChild(li);
+  } else {
+    items.forEach((item) => list.appendChild(renderItem(item)));
+  }
+
+  toggle.addEventListener("click", () => {
+    list.hidden = !list.hidden;
+    toggle.classList.toggle("open", !list.hidden);
+    toggle.textContent = `${labelPrefix} ${items.length}${unit} ${list.hidden ? "▾" : "▴"}`;
+  });
+
+  wrap.append(toggle, list);
+  return wrap;
+}
+
+function renderMyLogPanel(bodyEl) {
+  bodyEl.innerHTML = "";
+
+  const readWorks = WORKS.filter((w) => myLog.read.has(w.id));
+  const visitedSpots = [...myLog.visited]
+    .map((id) => ({ id, spot: SPOTS[id] }))
+    .filter((x) => x.spot);
+
   const byRegion = new Map();
-  myLog.visited.forEach((spotId) => {
-    const region = (SPOTS[spotId] && SPOTS[spotId].region) || "その他";
+  visitedSpots.forEach(({ spot }) => {
+    const region = spot.region || "その他";
     byRegion.set(region, (byRegion.get(region) || 0) + 1);
   });
   const regionLine = [...byRegion.entries()]
@@ -517,11 +555,41 @@ function renderMyLogPanel() {
     .map(([region, count]) => `${region} ${count}ヶ所`)
     .join("｜");
 
-  return `
-    <p class="mylog-summary">読んだ ${readCount}作品｜訪問 ${visitedCount}ヶ所</p>
-    <p class="mylog-regions">${regionLine || "まだ訪問記録がありません"}</p>
-    <p class="ed-hint">記録はこのブラウザだけに保存されます（他の人には見えません）。ⓘ詳細画面の「📖 読んだ」、地図ピンの「📍 行った」で記録できます。</p>
-  `;
+  const readStat = buildMylogStat("読んだ", "作品", readWorks, (work) => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = work.title;
+    btn.addEventListener("click", () => {
+      myLogPanel.hidden = true;
+      openWorkDetail(work);
+    });
+    li.appendChild(btn);
+    return li;
+  });
+
+  const visitStat = buildMylogStat("訪問", "ヶ所", visitedSpots, ({ id, spot }) => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = spot.name;
+    btn.addEventListener("click", () => {
+      myLogPanel.hidden = true;
+      selectSpotFromSearch(id);
+    });
+    li.appendChild(btn);
+    return li;
+  });
+
+  const regionsEl = document.createElement("p");
+  regionsEl.className = "mylog-regions";
+  regionsEl.textContent = regionLine || "まだ訪問記録がありません";
+
+  const hint = document.createElement("p");
+  hint.className = "ed-hint";
+  hint.textContent = "記録はこのブラウザだけに保存されます（他の人には見えません）。ⓘ詳細画面の「📖 読んだ」、地図ピンの「📍 行った」で記録できます。";
+
+  bodyEl.append(readStat, visitStat, regionsEl, hint);
 }
 
 const myLogPanel = document.createElement("div");
@@ -540,7 +608,7 @@ myLogPanel.querySelector(".work-detail-close").addEventListener("click", () => {
 myLogPanel.querySelector(".work-detail-backdrop").addEventListener("click", () => { myLogPanel.hidden = true; });
 
 document.getElementById("my-log-toggle").addEventListener("click", () => {
-  myLogPanel.querySelector(".mylog-body").innerHTML = renderMyLogPanel();
+  renderMyLogPanel(myLogPanel.querySelector(".mylog-body"));
   myLogPanel.hidden = false;
 });
 
