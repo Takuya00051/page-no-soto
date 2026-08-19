@@ -9,6 +9,9 @@ const DATA_PATH = "data.json";
 let SPOTS = {};
 let WORKS = [];
 
+// 📍絵文字の代わりに使うピンアイコン（ボタン・見出しなど「アイコンとして機能する」箇所のみで使う）
+const PIN_ICON_HTML = '<img src="pin-icon.png" alt="" class="icon-pin">';
+
 const map = L.map("map", { zoomControl: false }).setView([35.023, 135.776], 14);
 L.control.zoom({ position: "bottomright" }).addTo(map);
 
@@ -48,7 +51,7 @@ locateCtl.onAdd = () => {
   const btn = L.DomUtil.create("button", "locate-btn");
   btn.type = "button";
   btn.title = "現在地を表示";
-  btn.textContent = "📍";
+  btn.innerHTML = PIN_ICON_HTML;
   L.DomEvent.disableClickPropagation(btn);
   btn.addEventListener("click", () => toggleLocate(btn));
   return btn;
@@ -375,7 +378,7 @@ function popupHtml(spotId, spot, entries) {
   visitBtn.className = "visited-toggle";
   const setVisitLabel = () => {
     const done = myLog.visited.has(spotId);
-    visitBtn.textContent = done ? "📍 行った" : "📍 行った にする";
+    visitBtn.innerHTML = PIN_ICON_HTML + (done ? " 行った" : " 行った にする");
     visitBtn.classList.toggle("done", done);
   };
   setVisitLabel();
@@ -633,7 +636,7 @@ function renderMyLogPanel(bodyEl) {
 
   const hint = document.createElement("p");
   hint.className = "ed-hint";
-  hint.textContent = "記録はこのブラウザだけに保存されます（他の人には見えません）。ⓘ詳細画面の「📖 読んだ」、地図ピンの「📍 行った」で記録できます。";
+  hint.textContent = "記録はこのブラウザだけに保存されます（他の人には見えません）。ⓘ詳細画面の「📖 読んだ」、地図ピンの「行った」で記録できます。";
 
   bodyEl.append(readStat, visitStat, regionsEl, hint);
 }
@@ -903,7 +906,7 @@ function selectExternalSearchResult(lat, lng, label) {
   const addBtn = document.createElement("button");
   addBtn.type = "button";
   addBtn.className = "popup-add-pin-btn";
-  addBtn.textContent = "📍 このままピンを追加";
+  addBtn.innerHTML = PIN_ICON_HTML + " このままピンを追加";
   addBtn.addEventListener("click", () => {
     if (window.openEditorForNewSpotAt) window.openEditorForNewSpotAt(lat, lng, shortName);
   });

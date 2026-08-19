@@ -11,7 +11,7 @@ const editorEl = document.createElement("div");
 editorEl.id = "editor";
 editorEl.innerHTML = `
   <div class="editor-toggle-group">
-    <button id="editor-toggle" title="新しいピンを追加">📍 ピンを追加</button>
+    <button id="editor-toggle" title="新しいピンを追加">${PIN_ICON_HTML} ピンを追加</button>
     <button id="editor-toggle-work" title="作品だけ先に追加">📚 作品を追加</button>
   </div>
   <div id="editor-panel" hidden>
@@ -71,7 +71,7 @@ editorEl.innerHTML = `
     </div>
     <div id="ed-move-spot" hidden>
       <div class="ed-row">
-        <button id="ed-move-toggle">📍 ピンの位置を打ち直す</button>
+        <button id="ed-move-toggle">${PIN_ICON_HTML} ピンの位置を打ち直す</button>
         <button id="ed-move-save" class="ed-primary" hidden>この位置で保存</button>
       </div>
       <p class="ed-hint" id="ed-move-hint"></p>
@@ -171,7 +171,7 @@ function resetMoveMode() {
   moveMode = false;
   movePending = null;
   $("ed-move-save").hidden = true;
-  $("ed-move-toggle").textContent = "📍 ピンの位置を打ち直す";
+  $("ed-move-toggle").innerHTML = PIN_ICON_HTML + " ピンの位置を打ち直す";
   updateMoveHint();
 }
 
@@ -319,7 +319,7 @@ map.on("click", (e) => {
 
 $("ed-move-toggle").addEventListener("click", () => {
   moveMode = !moveMode;
-  $("ed-move-toggle").textContent = moveMode ? "打ち直しをやめる" : "📍 ピンの位置を打ち直す";
+  $("ed-move-toggle").innerHTML = moveMode ? "打ち直しをやめる" : PIN_ICON_HTML + " ピンの位置を打ち直す";
   if (!moveMode) {
     movePending = null;
     $("ed-move-save").hidden = true;
@@ -422,7 +422,15 @@ function showSpotCandidates(text) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "ed-candidate-chip";
-    btn.textContent = (f.type === "existing" ? "📍 " : "✨ ") + f.label;
+    if (f.type === "existing") {
+      const icon = document.createElement("img");
+      icon.src = "pin-icon.png";
+      icon.alt = "";
+      icon.className = "icon-pin";
+      btn.append(icon, " " + f.label);
+    } else {
+      btn.textContent = "✨ " + f.label;
+    }
     btn.addEventListener("click", () => applyCandidate(f));
     candEl.appendChild(btn);
   });

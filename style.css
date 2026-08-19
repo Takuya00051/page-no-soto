@@ -639,6 +639,14 @@ details[open] > .work-group-summary::before { content: "▾ "; }
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
 }
 
+/* 📍絵文字の代わりのピンアイコン。文字サイズに合わせて拡縮する */
+.icon-pin {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.12em;
+  display: inline-block;
+}
+
 .locate-btn,
 .fit-pins-map-btn {
   width: 42px;
@@ -650,7 +658,12 @@ details[open] > .work-group-summary::before { content: "▾ "; }
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.locate-btn .icon-pin { width: 20px; height: 20px; vertical-align: 0; }
 
 .fit-pins-map-btn:hover { background: var(--bg); }
 
