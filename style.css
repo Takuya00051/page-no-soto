@@ -665,6 +665,54 @@ details[open] > .work-group-summary::before { content: "▾ "; }
 
 .locate-btn .icon-pin { width: 20px; height: 20px; vertical-align: 0; }
 
+/* 仮ピン（新規登録・位置打ち直し・地名検索結果）: ホバー/タップで×が出て取り消せる */
+.pick-marker-wrap {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.pick-marker-pin {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1a73e8;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+
+.pick-marker-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #b3261e;
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.75);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.pick-marker-wrap:hover .pick-marker-remove,
+.pick-marker-wrap.revealed .pick-marker-remove {
+  opacity: 1;
+  transform: scale(1);
+}
+
 .fit-pins-map-btn:hover { background: var(--bg); }
 
 .locate-btn.active {

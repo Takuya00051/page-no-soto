@@ -36,6 +36,7 @@ editorEl.innerHTML = `
       <label class="ed-label">タイトル <input id="ed-work-title" type="text" placeholder="例: 夜行"></label>
       <label class="ed-label">著者 <input id="ed-work-author" type="text" placeholder="例: 森見登美彦" list="ed-author-list" autocomplete="off"></label>
       <datalist id="ed-author-list"></datalist>
+      <label class="ed-label">著者フリガナ（省略可・五十音順ソートに使用） <input id="ed-work-author-kana" type="text" placeholder="例: もりみとみひこ"></label>
       <div class="ed-row">
         <label class="ed-label">刊行年（省略可） <input id="ed-work-year" type="number" step="1" min="1800" max="2100" placeholder="例: 2006"></label>
         <label class="ed-label ed-color">ピンの色 <input id="ed-work-color" type="color" value="#5a7d9a"></label>
@@ -186,6 +187,7 @@ function updateMoveHint() {
 function fillWorkFields(work) {
   $("ed-work-title").value = work ? work.title : "";
   $("ed-work-author").value = work ? work.author : "";
+  $("ed-work-author-kana").value = work && work.authorKana ? work.authorKana : "";
   $("ed-work-year").value = work && work.year ? work.year : "";
   $("ed-work-color").value = work ? work.color : "#5a7d9a";
   $("ed-work-isbn").value = work && work.isbn ? work.isbn : "";
@@ -242,11 +244,17 @@ $("ed-work").addEventListener("change", onSelectionChange);
 $("ed-spot").addEventListener("change", onSelectionChange);
 
 // 新しい場所の座標欄に反映し、地図上に仮ピンを立てる（地図クリック・検索共通）
+// 仮ピンにカーソルを乗せる（タップ）と×が出て、押すと座標欄をクリアして取り消せる
 function setNewSpotCoords(lat, lng, { pan } = {}) {
   $("ed-spot-lat").value = lat.toFixed(5);
   $("ed-spot-lng").value = lng.toFixed(5);
   if (pickMarker) map.removeLayer(pickMarker);
-  pickMarker = L.marker([lat, lng]).addTo(map);
+  pickMarker = createDeletableMarker([lat, lng], () => {
+    pickMarker = null;
+    $("ed-spot-lat").value = "";
+    $("ed-spot-lng").value = "";
+  });
+  pickMarker.addTo(map);
   if (pan) map.setView([lat, lng], Math.max(map.getZoom(), 16));
 }
 
@@ -312,7 +320,12 @@ map.on("click", (e) => {
   } else if (moveMode) {
     movePending = e.latlng;
     if (pickMarker) map.removeLayer(pickMarker);
-    pickMarker = L.marker(e.latlng).addTo(map);
+    pickMarker = createDeletableMarker(e.latlng, () => {
+      pickMarker = null;
+      movePending = null;
+      $("ed-move-save").hidden = true;
+    });
+    pickMarker.addTo(map);
     $("ed-move-save").hidden = false;
   }
 });
@@ -480,6 +493,7 @@ function readWorkFields() {
   return {
     title: $("ed-work-title").value.trim(),
     author: $("ed-work-author").value.trim(),
+    authorKana: $("ed-work-author-kana").value.trim(),
     year: Number.isFinite(year) ? year : undefined,
     color: $("ed-work-color").value,
     isbn: $("ed-work-isbn").value.trim(),
@@ -492,6 +506,7 @@ function readWorkFields() {
 function applyWorkFields(work, fields) {
   work.title = fields.title;
   work.author = fields.author;
+  if (fields.authorKana) work.authorKana = fields.authorKana; else delete work.authorKana;
   work.color = fields.color;
   if (fields.year !== undefined) work.year = fields.year; else delete work.year;
   if (fields.isbn) work.isbn = fields.isbn; else delete work.isbn;

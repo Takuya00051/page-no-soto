@@ -161,7 +161,10 @@ function visibleWorksSorted() {
   }
   const key = sortEl.value;
   if (key === "author") {
-    list = [...list].sort((a, b) => a.author.localeCompare(b.author, "ja"));
+    // 著者名（漢字）だけでは五十音順にならないため、フリガナがあればそちらを使う
+    list = [...list].sort((a, b) =>
+      (a.authorKana || a.author).localeCompare(b.authorKana || b.author, "ja")
+    );
   } else if (key === "title") {
     list = [...list].sort((a, b) => a.title.localeCompare(b.title, "ja"));
   } else if (key === "year") {
@@ -187,24 +190,27 @@ function buildWorkList(selectedIds) {
     return;
   }
 
-  // 著者名ソートのときは、著者ごとに折りたためるグループ表示にする
-  // （作品数が増えても探しやすいように）
-  if (sortEl.value === "author") {
+  // 著者名・刊行年ソートのときは、グループごとに折りたためる表示にする
+  // （作品数が増えても探しやすいように。既定は折りたたんだ状態）
+  const sortKey = sortEl.value;
+  if (sortKey === "author" || sortKey === "year") {
+    const groupKeyOf = sortKey === "author" ? (w) => w.author : (w) => (w.year ? `${w.year}年` : "刊行年不明");
     const groups = new Map();
     list.forEach((w) => {
-      if (!groups.has(w.author)) groups.set(w.author, []);
-      groups.get(w.author).push(w);
+      const key = groupKeyOf(w);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(w);
     });
-    groups.forEach((works, author) => {
+    groups.forEach((works, groupName) => {
       const groupLi = document.createElement("li");
       groupLi.className = "work-group";
 
       const details = document.createElement("details");
-      details.open = true;
+      details.open = false;
 
       const summary = document.createElement("summary");
       summary.className = "work-group-summary";
-      summary.textContent = `${author}（${works.length}）`;
+      summary.textContent = `${groupName}（${works.length}）`;
 
       const ul = document.createElement("ul");
       ul.className = "work-group-list";
@@ -819,6 +825,39 @@ function matchingSpots(q) {
     .slice(0, 8);
 }
 
+// 仮ピン（新規登録・位置打ち直し・外部検索結果）共通:
+// カーソルを乗せる（タッチ端末はタップ）と小さな×が出て、押すと取り消せるマーカー。
+// editor.js からも使う。
+function createDeletableMarker(latlng, onRemove) {
+  const icon = L.divIcon({
+    className: "",
+    html:
+      '<div class="pick-marker-wrap">' +
+      '<div class="pick-marker-pin"></div>' +
+      '<button type="button" class="pick-marker-remove" title="このピンを取り消す">×</button>' +
+      "</div>",
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+  const marker = L.marker(latlng, { icon });
+  marker.on("add", () => {
+    const el = marker.getElement();
+    const wrap = el.querySelector(".pick-marker-wrap");
+    const btn = el.querySelector(".pick-marker-remove");
+    L.DomEvent.on(btn, "click", (e) => {
+      L.DomEvent.stopPropagation(e);
+      map.removeLayer(marker);
+      if (onRemove) onRemove();
+    });
+    // タッチ端末はホバーできないので、ピン本体タップで×の表示を切り替える
+    L.DomEvent.on(wrap, "click", (e) => {
+      L.DomEvent.stopPropagation(e);
+      wrap.classList.toggle("revealed");
+    });
+  });
+  return marker;
+}
+
 let spotSearchTimer = null;
 let tempSearchMarker = null;
 
@@ -913,8 +952,8 @@ function selectExternalSearchResult(lat, lng, label) {
   content.appendChild(addBtn);
 
   if (tempSearchMarker) map.removeLayer(tempSearchMarker);
-  tempSearchMarker = L.marker([lat, lng]).addTo(map);
-  tempSearchMarker.bindPopup(content).openPopup();
+  tempSearchMarker = createDeletableMarker([lat, lng], () => { tempSearchMarker = null; });
+  tempSearchMarker.bindPopup(content).addTo(map).openPopup();
   map.setView([lat, lng], 16, { animate: false });
   sidebar.classList.remove("open");
   spotSearchEl.value = "";
@@ -937,7 +976,35 @@ const sidebar = document.getElementById("sidebar");
 document.getElementById("sidebar-toggle").addEventListener("click", () => {
   sidebar.classList.toggle("open");
 });
-map.on("click", () => sidebar.classList.remove("open"));
+// 地図の何もない場所をクリックしたら「ここにピンを追加」を提案する
+// （編集パネルが開いていて、そちら側で座標を拾っている最中は出さない）
+let quickAddMarker = null;
+
+function showQuickAddPinPrompt(latlng) {
+  if (quickAddMarker) { map.removeLayer(quickAddMarker); quickAddMarker = null; }
+
+  const content = document.createElement("div");
+  content.className = "popup";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "popup-add-pin-btn";
+  btn.innerHTML = PIN_ICON_HTML + " ここにピンを追加";
+  btn.addEventListener("click", () => {
+    if (quickAddMarker) { map.removeLayer(quickAddMarker); quickAddMarker = null; }
+    if (window.openEditorForNewSpotAt) window.openEditorForNewSpotAt(latlng.lat, latlng.lng);
+  });
+  content.appendChild(btn);
+
+  quickAddMarker = createDeletableMarker(latlng, () => { quickAddMarker = null; });
+  quickAddMarker.bindPopup(content).addTo(map).openPopup();
+}
+
+map.on("click", (e) => {
+  sidebar.classList.remove("open");
+  const editorPanel = document.getElementById("editor-panel");
+  if (editorPanel && !editorPanel.hidden) return; // 編集パネル側の地図クリック処理に任せる
+  showQuickAddPinPrompt(e.latlng);
+});
 
 // ---- ロゴ：ホームに戻る（選択解除してリロード） ----
 document.getElementById("home-logo-btn").addEventListener("click", () => {
