@@ -10,7 +10,10 @@ const NEW = "__new__";
 const editorEl = document.createElement("div");
 editorEl.id = "editor";
 editorEl.innerHTML = `
-  <button id="editor-toggle" title="新しいピンを追加">📍 ピンを追加</button>
+  <div class="editor-toggle-group">
+    <button id="editor-toggle" title="新しいピンを追加">📍 ピンを追加</button>
+    <button id="editor-toggle-work" title="作品だけ先に追加">📚 作品を追加</button>
+  </div>
   <div id="editor-panel" hidden>
     <button id="editor-close" title="閉じる" aria-label="閉じる">×</button>
     <h2>シーンの追加・編集</h2>
@@ -50,7 +53,13 @@ editorEl.innerHTML = `
       <select id="ed-spot"></select>
     </label>
     <div id="ed-new-spot" hidden>
-      <p class="ed-hint">地図をクリックすると座標が入ります。</p>
+      <div class="ed-geosearch-wrap">
+        <label class="ed-label">地名・住所で検索
+          <input id="ed-geosearch" type="text" placeholder="例: 貴船神社" autocomplete="off">
+        </label>
+        <ul id="ed-geosearch-results" class="ed-geosearch-results" hidden></ul>
+      </div>
+      <p class="ed-hint">検索して候補を選ぶか、地図を直接クリックしても座標が入ります。</p>
       <label class="ed-label">場所名 <input id="ed-spot-name" type="text" placeholder="例: 貴船神社"></label>
       <label class="ed-label">フリガナ（省略可） <input id="ed-spot-kana" type="text" placeholder="例: きふねじんじゃ"></label>
       <label class="ed-label">場所の説明（省略可） <input id="ed-spot-note" type="text"></label>
@@ -107,6 +116,13 @@ $("editor-toggle").addEventListener("click", () => {
   panel.hidden = !panel.hidden;
   // メインボタンは「新しいピンを追加」が主用途なので、場所は新規作成側を既定にする
   if (!panel.hidden) refreshSelects(undefined, NEW);
+});
+
+$("editor-toggle-work").addEventListener("click", () => {
+  panel.hidden = false;
+  // 場所は選ばずに、作品情報の入力欄だけを開く（ピンなしで作品だけ先に登録できる）
+  refreshSelects(NEW);
+  $("ed-work-title").focus();
 });
 
 $("editor-close").addEventListener("click", () => {
@@ -207,14 +223,74 @@ window.openEditorForScene = (workId, spotId) => {
 $("ed-work").addEventListener("change", onSelectionChange);
 $("ed-spot").addEventListener("change", onSelectionChange);
 
+// 新しい場所の座標欄に反映し、地図上に仮ピンを立てる（地図クリック・検索共通）
+function setNewSpotCoords(lat, lng, { pan } = {}) {
+  $("ed-spot-lat").value = lat.toFixed(5);
+  $("ed-spot-lng").value = lng.toFixed(5);
+  if (pickMarker) map.removeLayer(pickMarker);
+  pickMarker = L.marker([lat, lng]).addTo(map);
+  if (pan) map.setView([lat, lng], Math.max(map.getZoom(), 16));
+}
+
+// ---- 地名・住所で検索（新しい場所を追加するとき） ----
+// 場所を思い出せる座標で知っていることは少ないので、地名検索から
+// 地図上に表示→ピン設置できるようにする（OpenStreetMap Nominatim、無料・無登録）
+let geosearchTimer = null;
+
+$("ed-geosearch").addEventListener("input", () => {
+  clearTimeout(geosearchTimer);
+  const q = $("ed-geosearch").value.trim();
+  const resultsEl = $("ed-geosearch-results");
+  if (q.length < 2) { resultsEl.hidden = true; resultsEl.innerHTML = ""; return; }
+  geosearchTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&accept-language=ja`
+      );
+      const results = await r.json();
+      resultsEl.innerHTML = "";
+      if (!results.length) {
+        resultsEl.hidden = true;
+        return;
+      }
+      results.forEach((res) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = res.display_name;
+        btn.addEventListener("click", () => {
+          const lat = parseFloat(res.lat);
+          const lng = parseFloat(res.lon);
+          setNewSpotCoords(lat, lng, { pan: true });
+          if (!$("ed-spot-name").value.trim()) {
+            $("ed-spot-name").value = (res.namedetails && res.namedetails.name) || res.display_name.split("、")[0].split(",")[0];
+          }
+          resultsEl.hidden = true;
+          resultsEl.innerHTML = "";
+          $("ed-geosearch").value = "";
+        });
+        li.appendChild(btn);
+        resultsEl.appendChild(li);
+      });
+      resultsEl.hidden = false;
+    } catch (err) {
+      resultsEl.hidden = true;
+    }
+  }, 400);
+});
+
+document.addEventListener("click", (e) => {
+  const resultsEl = $("ed-geosearch-results");
+  if (!resultsEl.hidden && !resultsEl.contains(e.target) && e.target !== $("ed-geosearch")) {
+    resultsEl.hidden = true;
+  }
+});
+
 // 地図クリック: 新しい場所の座標入力、または既存ピンの位置打ち直し
 map.on("click", (e) => {
   if (panel.hidden) return;
   if ($("ed-spot").value === NEW) {
-    $("ed-spot-lat").value = e.latlng.lat.toFixed(5);
-    $("ed-spot-lng").value = e.latlng.lng.toFixed(5);
-    if (pickMarker) map.removeLayer(pickMarker);
-    pickMarker = L.marker(e.latlng).addTo(map);
+    setNewSpotCoords(e.latlng.lat, e.latlng.lng);
   } else if (moveMode) {
     movePending = e.latlng;
     if (pickMarker) map.removeLayer(pickMarker);
@@ -352,13 +428,7 @@ async function applyCandidate(f) {
     );
     const j = await r.json();
     if (j[0]) {
-      const lat = parseFloat(j[0].lat);
-      const lng = parseFloat(j[0].lon);
-      $("ed-spot-lat").value = lat.toFixed(5);
-      $("ed-spot-lng").value = lng.toFixed(5);
-      if (pickMarker) map.removeLayer(pickMarker);
-      pickMarker = L.marker([lat, lng]).addTo(map);
-      map.setView([lat, lng], 16);
+      setNewSpotCoords(parseFloat(j[0].lat), parseFloat(j[0].lon), { pan: true });
       photoStatus(`「${f.label}」の座標を自動入力しました。内容を確認して保存してください。`);
     } else {
       photoStatus(`「${f.label}」の座標が見つかりませんでした。地図をクリックして指定してください。`);

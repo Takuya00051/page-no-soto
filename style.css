@@ -562,7 +562,13 @@ html, body {
   font-family: "Noto Sans JP", sans-serif;
 }
 
-#editor-toggle {
+.editor-toggle-group {
+  display: flex;
+  gap: 8px;
+}
+
+#editor-toggle,
+#editor-toggle-work {
   padding: 8px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -573,6 +579,7 @@ html, body {
   color: var(--ink);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 #editor-panel {
@@ -664,6 +671,44 @@ html, body {
 
 .ed-settings { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 .ed-settings summary { font-size: 12px; color: var(--ink-soft); cursor: pointer; margin-bottom: 8px; }
+
+.ed-geosearch-wrap { position: relative; }
+
+.ed-geosearch-results {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% - 6px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ed-geosearch-results li { margin: 0; }
+
+.ed-geosearch-results button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.ed-geosearch-results button:hover { background: var(--bg); }
 
 .ed-details {
   margin-bottom: 12px;
@@ -875,6 +920,11 @@ html, body {
     bottom: 60px;
     width: auto;
     max-height: 62vh;
+  }
+
+  .editor-toggle-group {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .sidebar-toggle {
