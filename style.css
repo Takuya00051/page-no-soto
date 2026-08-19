@@ -40,6 +40,14 @@ html, body {
   border-bottom: 1px solid var(--line);
 }
 
+.site-logo-btn {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
 .site-logo {
   display: block;
   width: 260px;

@@ -753,6 +753,12 @@ document.getElementById("sidebar-toggle").addEventListener("click", () => {
 });
 map.on("click", () => sidebar.classList.remove("open"));
 
+// ---- ロゴ：ホームに戻る（選択解除してリロード） ----
+document.getElementById("home-logo-btn").addEventListener("click", () => {
+  history.replaceState(null, "", location.pathname + location.search);
+  location.reload();
+});
+
 // ---- 起動 ----
 const appReady = loadData().then((data) => {
   SPOTS = data.spots;
