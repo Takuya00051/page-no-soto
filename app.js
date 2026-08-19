@@ -55,6 +55,20 @@ locateCtl.onAdd = () => {
 };
 locateCtl.addTo(map);
 
+// 「表示中のピンに画面を合わせる」は、サイドバー下部のボタンに加えて
+// 現在地ボタンのすぐ隣にも置く（地図上で操作を完結できるように）
+const fitPinsCtl = L.control({ position: "bottomright" });
+fitPinsCtl.onAdd = () => {
+  const btn = L.DomUtil.create("button", "fit-pins-map-btn");
+  btn.type = "button";
+  btn.title = "表示中のピンに画面を合わせる";
+  btn.textContent = "🎯";
+  L.DomEvent.disableClickPropagation(btn);
+  btn.addEventListener("click", fitToPins);
+  return btn;
+};
+fitPinsCtl.addTo(map);
+
 function stopLocate(btn) {
   if (geoWatchId !== null) navigator.geolocation.clearWatch(geoWatchId);
   geoWatchId = null;
@@ -770,20 +784,58 @@ function matchingSpots(q) {
     .slice(0, 8);
 }
 
+let spotSearchTimer = null;
+let tempSearchMarker = null;
+
 spotSearchEl.addEventListener("input", () => {
-  const matches = matchingSpots(spotSearchEl.value);
+  clearTimeout(spotSearchTimer);
+  const q = spotSearchEl.value;
+  const matches = matchingSpots(q);
   spotResultsEl.innerHTML = "";
-  if (!matches.length) { spotResultsEl.hidden = true; return; }
-  matches.forEach(([id, spot]) => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = spot.name;
-    btn.addEventListener("click", () => selectSpotFromSearch(id));
-    li.appendChild(btn);
-    spotResultsEl.appendChild(li);
-  });
-  spotResultsEl.hidden = false;
+
+  if (matches.length) {
+    matches.forEach(([id, spot]) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = spot.name;
+      btn.addEventListener("click", () => selectSpotFromSearch(id));
+      li.appendChild(btn);
+      spotResultsEl.appendChild(li);
+    });
+    spotResultsEl.hidden = false;
+    return;
+  }
+
+  // 登録済みの場所に一致がなければ、外部の地名検索（Nominatim）にフォールバックする
+  if (q.trim().length < 2) { spotResultsEl.hidden = true; return; }
+  spotSearchTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q.trim())}&format=json&limit=6&accept-language=ja`
+      );
+      const results = await r.json();
+      // 入力が変わっていたら（連打対策）表示しない
+      if (spotSearchEl.value.trim() !== q.trim()) return;
+      spotResultsEl.innerHTML = "";
+      if (!results.length) { spotResultsEl.hidden = true; return; }
+      results.forEach((res) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "spot-search-external";
+        btn.textContent = `🌐 ${res.display_name}`;
+        btn.addEventListener("click", () => {
+          selectExternalSearchResult(parseFloat(res.lat), parseFloat(res.lon), res.display_name);
+        });
+        li.appendChild(btn);
+        spotResultsEl.appendChild(li);
+      });
+      spotResultsEl.hidden = false;
+    } catch (err) {
+      spotResultsEl.hidden = true;
+    }
+  }, 400);
 });
 
 document.addEventListener("click", (e) => {
@@ -805,14 +857,33 @@ function selectSpotFromSearch(spotId) {
   spotResultsEl.innerHTML = "";
 }
 
+// 未登録の場所（Nominatim検索結果）を選んだとき: 地図を移動して仮ピンを立てるだけ。
+// まだ地図データに登録されていないので、作品との紐付けはできない。
+function selectExternalSearchResult(lat, lng, label) {
+  if (tempSearchMarker) map.removeLayer(tempSearchMarker);
+  tempSearchMarker = L.marker([lat, lng]).addTo(map);
+  tempSearchMarker
+    .bindPopup(
+      `<div class="popup"><p class="popup-spot-name">${label}</p>` +
+        `<p class="popup-spot-note">この地図にはまだ登録されていない場所です。「📍 ピンを追加」から登録できます。</p></div>`
+    )
+    .openPopup();
+  map.setView([lat, lng], 16, { animate: false });
+  sidebar.classList.remove("open");
+  spotSearchEl.value = "";
+  spotResultsEl.hidden = true;
+  spotResultsEl.innerHTML = "";
+}
+
 // ---- 表示中のピンに画面を合わせる ----
-document.getElementById("fit-pins").addEventListener("click", () => {
+function fitToPins() {
   const lls = [...markersBySpot.values()].map((m) => m.getLatLng());
   if (lls.length) {
     map.fitBounds(L.latLngBounds(lls).pad(0.2), { maxZoom: 15, animate: false });
   }
   sidebar.classList.remove("open");
-});
+}
+document.getElementById("fit-pins").addEventListener("click", fitToPins);
 
 // ---- モバイル用サイドバー開閉 ----
 const sidebar = document.getElementById("sidebar");
