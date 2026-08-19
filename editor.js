@@ -327,6 +327,10 @@ map.on("click", (e) => {
     });
     pickMarker.addTo(map);
     $("ed-move-save").hidden = false;
+  } else {
+    // 座標を拾う必要がないとき（既存シーンの編集中・作品追加のみ等）の地図クリックは
+    // 「欄外タップで閉じる」として扱い、パネルを閉じる
+    panel.hidden = true;
   }
 });
 
