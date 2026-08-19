@@ -380,7 +380,10 @@ html, body {
   overflow-x: hidden !important;
 }
 
-.popup { width: 280px; max-width: calc(100vw - 90px); }
+/* width:280px の固定指定だと、maxHeightでスクロールバーが出たとき
+   親の実幅がその分狭くなるのに追従できず、右端の文字が隠れていた。
+   100%にして親（スクロール中の実幅）へ常に追従させる。 */
+.popup { width: 100%; max-width: calc(100vw - 90px); }
 
 .popup-spot-kana {
   font-size: 10px;
