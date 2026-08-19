@@ -184,7 +184,40 @@ function buildWorkList(selectedIds) {
     return;
   }
 
-  list.forEach((work) => {
+  // 著者名ソートのときは、著者ごとに折りたためるグループ表示にする
+  // （作品数が増えても探しやすいように）
+  if (sortEl.value === "author") {
+    const groups = new Map();
+    list.forEach((w) => {
+      if (!groups.has(w.author)) groups.set(w.author, []);
+      groups.get(w.author).push(w);
+    });
+    groups.forEach((works, author) => {
+      const groupLi = document.createElement("li");
+      groupLi.className = "work-group";
+
+      const details = document.createElement("details");
+      details.open = true;
+
+      const summary = document.createElement("summary");
+      summary.className = "work-group-summary";
+      summary.textContent = `${author}（${works.length}）`;
+
+      const ul = document.createElement("ul");
+      ul.className = "work-group-list";
+      works.forEach((work) => ul.appendChild(createWorkItemEl(work)));
+
+      details.append(summary, ul);
+      groupLi.appendChild(details);
+      workListEl.appendChild(groupLi);
+    });
+    return;
+  }
+
+  list.forEach((work) => workListEl.appendChild(createWorkItemEl(work)));
+}
+
+function createWorkItemEl(work) {
     const li = document.createElement("li");
     li.className = "work-item";
 
@@ -235,8 +268,7 @@ function buildWorkList(selectedIds) {
     // 色ドットのすぐ右（本文の左）に置く
     label.append(dot, infoBtn, meta, checkbox);
     li.appendChild(label);
-    workListEl.appendChild(li);
-  });
+    return li;
 }
 
 searchEl.addEventListener("input", () => buildWorkList());
@@ -860,14 +892,26 @@ function selectSpotFromSearch(spotId) {
 // 未登録の場所（Nominatim検索結果）を選んだとき: 地図を移動して仮ピンを立てるだけ。
 // まだ地図データに登録されていないので、作品との紐付けはできない。
 function selectExternalSearchResult(lat, lng, label) {
+  const shortName = label.split(/[,、]/)[0].trim();
+
+  const content = document.createElement("div");
+  content.className = "popup";
+  content.innerHTML =
+    `<p class="popup-spot-name">${label}</p>` +
+    `<p class="popup-spot-note">この地図にはまだ登録されていない場所です。</p>`;
+
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "popup-add-pin-btn";
+  addBtn.textContent = "📍 このままピンを追加";
+  addBtn.addEventListener("click", () => {
+    if (window.openEditorForNewSpotAt) window.openEditorForNewSpotAt(lat, lng, shortName);
+  });
+  content.appendChild(addBtn);
+
   if (tempSearchMarker) map.removeLayer(tempSearchMarker);
   tempSearchMarker = L.marker([lat, lng]).addTo(map);
-  tempSearchMarker
-    .bindPopup(
-      `<div class="popup"><p class="popup-spot-name">${label}</p>` +
-        `<p class="popup-spot-note">この地図にはまだ登録されていない場所です。「📍 ピンを追加」から登録できます。</p></div>`
-    )
-    .openPopup();
+  tempSearchMarker.bindPopup(content).openPopup();
   map.setView([lat, lng], 16, { animate: false });
   sidebar.classList.remove("open");
   spotSearchEl.value = "";

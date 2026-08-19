@@ -34,7 +34,8 @@ editorEl.innerHTML = `
     <details id="ed-work-fields" class="ed-details">
       <summary>作品情報を編集</summary>
       <label class="ed-label">タイトル <input id="ed-work-title" type="text" placeholder="例: 夜行"></label>
-      <label class="ed-label">著者 <input id="ed-work-author" type="text" placeholder="例: 森見登美彦"></label>
+      <label class="ed-label">著者 <input id="ed-work-author" type="text" placeholder="例: 森見登美彦" list="ed-author-list" autocomplete="off"></label>
+      <datalist id="ed-author-list"></datalist>
       <div class="ed-row">
         <label class="ed-label">刊行年（省略可） <input id="ed-work-year" type="number" step="1" min="1800" max="2100" placeholder="例: 2006"></label>
         <label class="ed-label ed-color">ピンの色 <input id="ed-work-color" type="color" value="#5a7d9a"></label>
@@ -146,6 +147,13 @@ function refreshSelects(keepWork, keepSpot) {
   spotSel.add(new Option("＋ 新しい場所を追加（地図クリック）", NEW));
   if (keepSpot) spotSel.value = keepSpot;
 
+  // 著者入力欄のサジェスト（登録済みの著者名を重複なく）
+  const authorList = $("ed-author-list");
+  authorList.innerHTML = "";
+  [...new Set(WORKS.map((w) => w.author).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "ja"))
+    .forEach((author) => authorList.appendChild(new Option(author)));
+
   onSelectionChange();
 }
 
@@ -217,6 +225,16 @@ window.openEditorForWork = (workId) => {
 window.openEditorForScene = (workId, spotId) => {
   panel.hidden = false;
   refreshSelects(workId, spotId);
+  panel.querySelector("h2").scrollIntoView({ block: "start", behavior: "smooth" });
+};
+
+// 「場所で探す」の外部検索結果（未登録の場所）から、その座標で
+// そのまま「新しい場所を追加」フォームを開く
+window.openEditorForNewSpotAt = (lat, lng, name) => {
+  panel.hidden = false;
+  refreshSelects(undefined, NEW);
+  if (name) $("ed-spot-name").value = name;
+  setNewSpotCoords(lat, lng, { pan: true });
   panel.querySelector("h2").scrollIntoView({ block: "start", behavior: "smooth" });
 };
 

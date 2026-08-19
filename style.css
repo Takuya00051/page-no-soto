@@ -184,6 +184,32 @@ html, body {
   padding: 0;
 }
 
+.work-group { margin-bottom: 6px; }
+
+.work-group-summary {
+  list-style: none;
+  padding: 8px 6px;
+  font-family: "Noto Serif JP", serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-radius: 6px;
+  user-select: none;
+}
+
+.work-group-summary::-webkit-details-marker { display: none; }
+.work-group-summary::before { content: "▸ "; }
+details[open] > .work-group-summary::before { content: "▾ "; }
+
+.work-group-summary:hover { background: var(--bg); color: var(--ink); }
+
+.work-group-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 4px;
+}
+
 .work-item {
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -476,6 +502,23 @@ html, body {
 }
 
 .popup-gmap-link:hover { text-decoration: underline; }
+
+.popup-add-pin-btn {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.popup-add-pin-btn:hover { background: var(--accent); color: #fff; }
 
 .popup-work {
   border-left: 3px solid;
